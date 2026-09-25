@@ -1,0 +1,48 @@
+{% extends 'blog/base.html' %}
+{% block title %}Завершить: {{ event.title }}{% endblock %}
+{% block content %}
+<h1>Завершить мероприятие</h1>
+<p style="color:var(--text-secondary);">«{{ event.title }}»</p>
+
+<div class="card">
+    <h3>Проверка перед завершением</h3>
+    <ul class="checklist">
+        <li class="{% if checklist.all_days_past %}checklist-ok{% else %}checklist-fail{% endif %}">
+            {% if checklist.all_days_past %}✅{% else %}⛔{% endif %}
+            Все дни мероприятия уже прошли
+            {% if not checklist.has_days %}<span class="field-hint">— у мероприятия не заданы дни</span>{% endif %}
+        </li>
+        <li class="{% if checklist.no_pending_applications %}checklist-ok{% else %}checklist-fail{% endif %}">
+            {% if checklist.no_pending_applications %}✅{% else %}⛔{% endif %}
+            Все заявки обработаны
+            {% if not checklist.no_pending_applications %}<span class="field-hint">— необработанных: {{ checklist.pending_applications_count }}</span>{% endif %}
+        </li>
+        <li class="{% if checklist.no_approved_without_user %}checklist-ok{% else %}checklist-fail{% endif %}">
+            {% if checklist.no_approved_without_user %}✅{% else %}⛔{% endif %}
+            У одобренных заявок есть профиль волонтёра
+            {% if not checklist.no_approved_without_user %}<span class="field-hint">— без профиля: {{ checklist.approved_without_user_count }} (явку по ним проставить нельзя)</span>{% endif %}
+        </li>
+    </ul>
+
+    {% if checklist.already_finished %}
+        <p class="pill neutral"><span class="dot"></span>Мероприятие уже завершено.</p>
+    {% elif not checklist.ready %}
+        <p style="color:var(--danger); font-size:14px;">Устраните пункты выше, чтобы завершить мероприятие.</p>
+        <a href="{% url 'event_detail' event.id %}" class="btn secondary">← Вернуться к мероприятию</a>
+    {% else %}
+        <form method="post" id="close-event-form" onsubmit="return confirm('Завершить мероприятие «{{ event.title|escapejs }}»? Это действие нельзя отменить.');">
+            {% csrf_token %}
+            <div class="field" style="max-width:320px; margin-top:1rem;">
+                <label for="id_people_helped">Людей получили помощь</label>
+                <input type="number" min="0" name="people_helped" id="id_people_helped"
+                       value="{{ event.people_helped|default_if_none:'' }}" required>
+                <div class="field-hint">Обязательно для закрытия мероприятия (db.md, правило 7).</div>
+            </div>
+            <div class="event-form-actions">
+                <a href="{% url 'event_detail' event.id %}" class="btn secondary">Отмена</a>
+                <button type="submit" class="btn danger">Завершить мероприятие</button>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

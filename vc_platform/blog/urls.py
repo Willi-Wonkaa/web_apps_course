@@ -1,0 +1,86 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('auth/telegram/callback/', views.telegram_login_callback, name='telegram_login_callback'),
+    path('auth/tg/<uuid:token>/', views.tg_link_login, name='tg_link_login'),
+    path('profile/complete/', views.complete_profile, name='complete_profile'),
+    path('', views.dashboard, name='dashboard'),
+
+    path('webapp/', views.webapp_entry, name='webapp_entry'),
+    path('webapp/auth/', views.webapp_auth, name='webapp_auth'),
+
+    path('events/', views.event_list, name='event_list'),
+    path('events/new/', views.event_create, name='event_create'),
+    path('events/<int:event_id>/', views.event_detail, name='event_detail'),
+    path('events/<int:event_id>/edit/', views.event_edit, name='event_edit'),
+    path('events/<int:event_id>/publish/', views.event_publish, name='event_publish'),
+    path('events/<int:event_id>/broadcast/', views.event_broadcast, name='event_broadcast'),
+    path('events/<int:event_id>/close/', views.event_close, name='event_close'),
+    path('events/<int:event_id>/shifts/add/', views.event_shift_add, name='event_shift_add'),
+    path('events/<int:event_id>/shifts/<int:shift_id>/edit/', views.event_shift_edit, name='event_shift_edit'),
+    path('events/<int:event_id>/shifts/<int:shift_id>/delete/', views.event_shift_delete, name='event_shift_delete'),
+    path('events/<int:event_id>/shifts/<int:shift_id>/toggle-recruit/', views.shift_toggle_recruit, name='shift_toggle_recruit'),
+    path('events/<int:event_id>/feedback/', views.event_feedback_add, name='event_feedback_add'),
+    path('events/<int:event_id>/comment/', views.event_comment_add, name='event_comment_add'),
+    path('events/<int:event_id>/change-log/mark-read/', views.event_change_log_mark_read, name='event_change_log_mark_read'),
+    path('events/<int:event_id>/applications/process-all/', views.application_process_all, name='event_application_process_all'),
+
+    path('participations/<int:participation_id>/edit/', views.participation_edit, name='participation_edit'),
+    path('participations/<int:participation_id>/set-status/', views.participation_set_status, name='participation_set_status'),
+
+    path('applications/new/', views.application_create, name='application_create'),
+    path('applications/<int:application_id>/edit/', views.application_edit, name='application_edit'),
+    path('applications/<int:application_id>/cancel/', views.application_cancel, name='application_cancel'),
+    path('applications/event-shifts/<int:event_id>/', views.event_shifts_json, name='event_shifts_json'),
+    path('applications/pending/', views.pending_applications, name='pending_applications'),
+    path('applications/process-all/', views.application_process_all, name='application_process_all'),
+    path('applications/<int:application_id>/process/', views.application_process, name='application_process'),
+    path('applications/<int:application_id>/shifts/<int:shift_id>/process/', views.application_shift_process, name='application_shift_process'),
+    path('applications/import/', views.import_preview, name='import_preview'),
+    path('applications/import/commit/', views.import_commit, name='import_commit'),
+
+    path('profile/<int:user_id>/', views.profile_detail, name='profile_detail'),
+    path('profile/<int:user_id>/comment/', views.profile_comment_add, name='profile_comment_add'),
+    path('profile/<int:user_id>/letters/<int:event_id>/', views.letter_view, name='letter_view'),
+    path('profile/experience/add/', views.external_experience_add, name='external_experience_add'),
+    path('profile/experience/<int:exp_id>/edit/', views.external_experience_edit, name='external_experience_edit'),
+    path('profile/experience/<int:exp_id>/delete/', views.external_experience_delete, name='external_experience_delete'),
+
+    # Публичные (без входа) страницы
+    path('public/events/', views.public_event_list, name='public_event_list'),
+    path('events/s/<uuid:token>/', views.public_event_detail, name='public_event_detail'),
+    path('profile/exp/<uuid:token>/', views.public_experience, name='public_experience'),
+
+    path('reports/period/', views.report_period, name='report_period'),
+    path('reports/period/export/', views.report_period_export, name='report_period_export'),
+    path('reports/period/pdf/<str:variant>/', views.report_period_pdf, name='report_period_pdf'),
+    path('reports/period/bundle/', views.report_bundle, name='report_bundle'),
+    path('reports/period/events-search/', views.report_events_search, name='report_events_search'),
+    path('reports/dobro/export/', views.report_dobro_export, name='report_dobro_export'),
+    path('reports/event/<int:event_id>/pdf/', views.report_event_pdf, name='report_event_pdf'),
+    path('reports/event/<int:event_id>/export/', views.report_event_export, name='report_event_export'),
+    path('locations/', views.location_list, name='location_list'),
+    path('locations/new/', views.location_create, name='location_create'),
+    path('locations/<int:location_id>/edit/', views.location_edit, name='location_edit'),
+    path('organizations/', views.organizations_list, name='organizations_list'),
+    path('organizations/new/', views.organization_create, name='organization_create'),
+    path('organizations/<int:org_id>/', views.organization_detail, name='organization_detail'),
+    path('organizations/<int:org_id>/edit/', views.organization_edit, name='organization_edit'),
+
+    path('users/', views.user_list, name='user_list'),
+    path('organizers/', views.organizer_list, name='organizer_list'),
+    path('organizers/new/', views.organizer_create, name='organizer_create'),
+    path('organizers/<int:organizer_id>/', views.organizer_detail, name='organizer_detail'),
+    path('organizers/<int:organizer_id>/edit/', views.organizer_edit, name='organizer_edit'),
+    path('settings/', views.settings_view, name='settings'),
+    path('settings/const/<int:const_id>/edit/', views.const_edit, name='const_edit'),
+
+    path('quick-create/location/', views.quick_create_location, name='quick_create_location'),
+    path('quick-create/organization/', views.quick_create_organization, name='quick_create_organization'),
+    path('quick-create/organizer/', views.quick_create_organizer, name='quick_create_organizer'),
+    path('quick-create/category/', views.quick_create_category, name='quick_create_category'),
+]

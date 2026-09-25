@@ -1,0 +1,8 @@
+{% extends 'blog/base.html' %}
+{% block title %}{{ title|default:'Явка' }}{% endblock %}
+{% block content %}
+<h1>{{ title|default:'Явка' }}</h1>
+<div class="card" style="max-width:400px;">
+    {% include 'blog/partials/_modal_form.html' %}
+</div>
+{% endblock %}

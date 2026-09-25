@@ -1,0 +1,1140 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Волонтёрский центр{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'blog/css/nexus.css' %}">
+    {% block extra_head %}{% endblock %}
+    <script>
+        // Тема применяется до отрисовки, чтобы избежать "мигания" не той темой.
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        })();
+    </script>
+</head>
+<body class="{% if request.COOKIES.sidebar_collapsed == '1' %}sidebar-collapsed{% endif %}">
+{% if user.is_authenticated %}
+<aside class="sidebar">
+    <a href="{% url 'profile_detail' user.id %}" class="sidebar-account">
+        <div class="avatar-placeholder">{{ user.full_name|slice:":1"|upper }}</div>
+        <div class="username">{{ user.full_name }}</div>
+        <div class="role">{{ role_label }}</div>
+    </a>
+
+    <div class="nav-section-title">Основное</div>
+    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" title="Главная"><span class="icon">🏠</span><span class="nav-label"> Главная</span></a>
+    <a href="{% url 'event_list' %}" class="nav-link {% if request.resolver_match.url_name in 'event_list,event_detail' %}active{% endif %}" title="Мероприятия"><span class="icon">📅</span><span class="nav-label"> Мероприятия</span></a>
+    <a href="{% url 'application_create' %}" class="nav-link {% if request.resolver_match.url_name == 'application_create' %}active{% endif %}" title="Подать заявку"><span class="icon">📝</span><span class="nav-label"> Подать заявку</span></a>
+
+    {% if is_manager %}
+    <div class="nav-section-title">Управление</div>
+    <a href="{% url 'pending_applications' %}" class="nav-link {% if request.resolver_match.url_name == 'pending_applications' %}active{% endif %}" title="Необработанные заявки"><span class="icon">🕓</span><span class="nav-label"> Необработанные заявки</span></a>
+    <a href="{% url 'import_preview' %}" class="nav-link {% if request.resolver_match.url_name in 'import_preview,import_commit' %}active{% endif %}" title="Импорт заявок"><span class="icon">📥</span><span class="nav-label"> Импорт заявок</span></a>
+    <a href="{% url 'user_list' %}" class="nav-link {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}" title="Пользователи"><span class="icon">👥</span><span class="nav-label"> Пользователи</span></a>
+    {% endif %}
+
+    <div class="sidebar-footer">
+        <button type="button" class="theme-toggle" id="theme-toggle" title="Тема">
+            <span class="icon" id="theme-icon">🌙</span><span class="theme-label" id="theme-label"> Тёмная тема</span>
+        </button>
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" title="Свернуть панель">
+            <span class="icon" id="sidebar-toggle-icon">⬅️</span><span class="nav-label" id="sidebar-toggle-label"> Свернуть</span>
+        </button>
+        <a href="{% url 'logout' %}" class="nav-link" title="Выйти"><span class="icon">🚪</span><span class="nav-label"> Выйти</span></a>
+    </div>
+</aside>
+{% endif %}
+
+{% if not user.is_authenticated %}
+{# Гостевой хедер: статус «Гость» слева (клик → вход) + кнопка «Войти». #}
+<header class="guest-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.6rem 1rem; border-bottom:1px solid var(--border, #e5e7eb);">
+    <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none; color:inherit;" title="Войти в аккаунт">
+        <span class="avatar-placeholder" style="width:2rem; height:2rem; display:inline-flex; align-items:center; justify-content:center; border-radius:50%;">👤</span>
+        <span style="display:flex; flex-direction:column; line-height:1.1;">
+            <span style="font-weight:600;">Гость</span>
+            <span style="font-size:0.78rem; color:var(--text-secondary);">Войти в аккаунт</span>
+        </span>
+    </a>
+    <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn">Войти</a>
+</header>
+{% endif %}
+
+<div class="page-wrapper" style="{% if not user.is_authenticated %}margin-left:0;{% endif %}">
+    <main>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+{% if not user.is_authenticated %}
+{# Плашка «авторизуйтесь» снизу — для гостя (несанкционированный просмотр сайта). #}
+<div class="guest-banner" style="position:fixed; left:0; right:0; bottom:0; z-index:50; display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap; padding:0.7rem 1rem; background:var(--surface, #111827); color:#fff; box-shadow:0 -2px 12px rgba(0,0,0,0.25);">
+    <span>Вы просматриваете сайт как гость.</span>
+    <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn">Авторизуйтесь</a>
+</div>
+<div style="height:3.5rem;"></div>{# отступ, чтобы плашка не перекрывала контент #}
+{% endif %}
+
+<div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="modal-title"></h3>
+            <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
+
+{# Вложенная модалка быстрого создания справочника (локация/организация/организатор) —
+   второй слой поверх формы мероприятия, чтобы не терять введённые в неё данные. #}
+<div class="quick-add-backdrop" id="quick-add-backdrop" hidden>
+    <div class="quick-add-dialog">
+        <div class="modal-header">
+            <h3 id="quick-add-title"></h3>
+            <button type="button" class="modal-close" id="quick-add-close" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="modal-body" id="quick-add-body"></div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<nav class="bottom-tabbar">
+    <a href="{% url 'dashboard' %}" class="tab-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="tab-icon">🏠</span>Главная
+    </a>
+    <a href="{% url 'event_list' %}" class="tab-item {% if request.resolver_match.url_name in 'event_list,event_detail' %}active{% endif %}">
+        <span class="tab-icon">📅</span>Меропр.
+    </a>
+    <a href="{% url 'application_create' %}" class="fab-tab" title="Подать заявку">+</a>
+    {% if is_manager %}
+    <a href="{% url 'pending_applications' %}" class="tab-item {% if request.resolver_match.url_name == 'pending_applications' %}active{% endif %}">
+        <span class="tab-icon">🕓</span>Заявки
+    </a>
+    {% else %}
+    <a href="{% url 'profile_detail' user.id %}" class="tab-item {% if request.resolver_match.url_name == 'profile_detail' %}active{% endif %}">
+        <span class="tab-icon">📊</span>Статист.
+    </a>
+    {% endif %}
+    <a href="{% url 'profile_detail' user.id %}" class="tab-item {% if request.resolver_match.url_name == 'profile_detail' %}active{% endif %}">
+        <span class="tab-icon">👤</span>Профиль
+    </a>
+</nav>
+{% endif %}
+
+<script>
+    // Double-click по строке таблицы с data-href → переход на страницу деталей/профиля.
+    document.addEventListener('dblclick', function (event) {
+        var row = event.target.closest('tr[data-href]');
+        if (row) {
+            window.location.href = row.getAttribute('data-href');
+        }
+    });
+
+    // Сворачивание сайдбара — состояние в cookie (переживает переход между страницами).
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle) {
+        var collapsed = document.body.classList.contains('sidebar-collapsed');
+        var updateToggleLabel = function () {
+            var icon = document.getElementById('sidebar-toggle-icon');
+            var label = document.getElementById('sidebar-toggle-label');
+            icon.textContent = collapsed ? '➡️' : '⬅️';
+            label.textContent = collapsed ? ' Развернуть' : ' Свернуть';
+        };
+        updateToggleLabel();
+        sidebarToggle.addEventListener('click', function () {
+            collapsed = !collapsed;
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            document.cookie = 'sidebar_collapsed=' + (collapsed ? '1' : '0') + ';path=/;max-age=31536000';
+            updateToggleLabel();
+        });
+    }
+
+    // Переключатель светлой/тёмной темы — состояние в localStorage.
+    var themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var currentTheme = localStorage.getItem('theme') || (systemPrefersDark ? 'dark' : 'light');
+        var updateThemeLabel = function () {
+            var icon = document.getElementById('theme-icon');
+            var label = document.getElementById('theme-label');
+            icon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+            label.textContent = currentTheme === 'dark' ? ' Светлая тема' : ' Тёмная тема';
+        };
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        updateThemeLabel();
+        themeToggle.addEventListener('click', function () {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeLabel();
+        });
+    }
+
+    // Счётчик символов для полей с maxlength (brandbook §6.2) — навешивается на любой
+    // input/textarea с атрибутом maxlength в переданном контейнере (страница или модалка).
+    function initCharCounters(root) {
+        root.querySelectorAll('textarea[maxlength], input[maxlength]').forEach(function (field) {
+            if (field.dataset.counterInit) return;
+            field.dataset.counterInit = '1';
+            var counter = document.createElement('div');
+            counter.className = 'char-counter';
+            field.insertAdjacentElement('afterend', counter);
+            var max = parseInt(field.getAttribute('maxlength'), 10);
+            var update = function () {
+                var len = field.value.length;
+                counter.textContent = len + ' / ' + max;
+                counter.classList.toggle('warn', len / max > 0.9);
+            };
+            field.addEventListener('input', update);
+            update();
+        });
+    }
+    initCharCounters(document);
+
+    // ======================================================================
+    // Модалка (десктоп) / bottom sheet (мобайл) для форм создания/редактирования.
+    // Ссылки с `data-modal` и заголовком в `data-modal-title` открывают форму по
+    // своему href через AJAX внутрь оверлея вместо перехода на отдельную страницу
+    // (brandbook §6.2). Сервер отличает AJAX по заголовку X-Requested-With и
+    // возвращает либо partial формы, либо {"redirect": url} при успехе.
+    // ======================================================================
+    var modalBackdrop = document.getElementById('modal-backdrop');
+    var modalBody = document.getElementById('modal-body');
+    var modalTitle = document.getElementById('modal-title');
+    var modalClose = document.getElementById('modal-close');
+
+    function openModal(title) {
+        modalTitle.textContent = title || '';
+        modalBackdrop.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modalBackdrop.hidden = true;
+        modalBody.innerHTML = '';
+        document.body.style.overflow = '';
+        // Time-picker списки рендерятся напрямую в <body> (position:fixed, чтобы не
+        // обрезаться overflow модалки) — их нужно убрать вручную, иначе останутся сиротами.
+        document.querySelectorAll('.timepicker-list').forEach(function (el) { el.remove(); });
+    }
+
+    function bindModalForm(formUrl) {
+        var form = modalBody.querySelector('[data-modal-form], form');
+        if (!form) return;
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var submitBtn = form.querySelector('button[type=submit]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            fetch(form.getAttribute('action') || formUrl, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(form),
+            })
+            .then(function (r) {
+                var contentType = r.headers.get('content-type') || '';
+                if (contentType.indexOf('application/json') !== -1) {
+                    return r.json().then(function (data) { return { redirect: data.redirect }; });
+                }
+                return r.text().then(function (html) { return { html: html }; });
+            })
+            .then(function (result) {
+                if (result.redirect) {
+                    window.location.href = result.redirect;
+                    return;
+                }
+                document.querySelectorAll('.timepicker-list').forEach(function (el) { el.remove(); });
+                modalBody.innerHTML = result.html;
+                initCharCounters(modalBody);
+                initEventForm(modalBody);
+                bindModalForm(formUrl);
+                if (submitBtn) submitBtn.disabled = false;
+            })
+            .catch(function () {
+                if (submitBtn) submitBtn.disabled = false;
+            });
+        });
+    }
+
+    function loadModal(url, title) {
+        openModal(title);
+        modalBody.innerHTML = '<p style="color:var(--text-secondary);">Загрузка…</p>';
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                document.querySelectorAll('.timepicker-list').forEach(function (el) { el.remove(); });
+                modalBody.innerHTML = html;
+                initCharCounters(modalBody);
+                initEventForm(modalBody);
+                bindModalForm(url);
+            });
+    }
+
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-modal]');
+        if (!trigger) return;
+        event.preventDefault();
+        loadModal(trigger.getAttribute('href'), trigger.getAttribute('data-modal-title') || trigger.textContent.trim());
+    });
+
+    modalClose.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', function (event) {
+        if (event.target === modalBackdrop) closeModal();
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !modalBackdrop.hidden) closeModal();
+    });
+
+    // ======================================================================
+    // Форма мероприятия: инициализация чип-виджетов (категории/тим-лидеры) и
+    // date-picker'ов. Вызывается при загрузке формы в модалку и на обычной странице.
+    // ======================================================================
+    function initEventForm(root) {
+        initCategoryChips(root);
+        initShiftChips(root);
+        initDatepickers(root);
+        initTimepickers(root);
+        initApplicationForm(root);
+    }
+
+    // ======================================================================
+    // Смены в форме создания мероприятия — тот же визуальный язык, что у чипов
+    // категорий: уже добавленные смены показываются чипами с крестиком (убрать),
+    // поля ввода ниже собирают одну новую смену за раз (дата — обычный календарь
+    // data-datepicker, время — data-timepicker, как везде в проекте), кнопка "＋"
+    // добавляет её в список. Итоговый массив уходит на сервер JSON-строкой в
+    // shifts_json — сервер валидирует каждую смену отдельно (EventForm._build_shift_forms).
+    // Вызывается ДО initDatepickers/initTimepickers, чтобы найти исходные поля по
+    // data-shift-day/-start/-end, пока их ещё не подменили виджеты.
+    // ======================================================================
+    function initShiftChips(root) {
+        root.querySelectorAll('[data-shift-chips-json]').forEach(function (jsonInput) {
+            if (jsonInput.dataset.shiftInit) return;
+            jsonInput.dataset.shiftInit = '1';
+
+            var wrap = jsonInput.parentNode;
+            var selectedRow = wrap.querySelector('[data-shift-chips-selected]');
+            var dayInput = wrap.querySelector('[data-shift-day]');
+            var startInput = wrap.querySelector('[data-shift-start]');
+            var endInput = wrap.querySelector('[data-shift-end]');
+            var neededInput = wrap.querySelector('[data-shift-needed]');
+            var addBtn = wrap.querySelector('[data-shift-add]');
+            var errorBox = wrap.querySelector('[data-shift-error]');
+            if (!selectedRow || !dayInput || !addBtn) return;
+
+            // initDatepickers удаляет исходный dayInput и кладёт рядом hidden с
+            // реальным значением — запоминаем родителя сейчас, пока dayInput жив.
+            var dayFieldParent = dayInput.parentNode;
+
+            var shifts = [];
+            try { shifts = JSON.parse(jsonInput.value || '[]'); } catch (e) { shifts = []; }
+
+            function showError(text) {
+                if (!errorBox) return;
+                errorBox.textContent = text;
+                errorBox.hidden = !text;
+            }
+
+            function render() {
+                selectedRow.innerHTML = '';
+                if (!shifts.length) {
+                    var empty = document.createElement('span');
+                    empty.className = 'cat-chips-empty';
+                    empty.textContent = 'Смены ещё не добавлены';
+                    selectedRow.appendChild(empty);
+                }
+                shifts.forEach(function (s, idx) {
+                    var chip = document.createElement('span');
+                    chip.className = 'cat-chip ' + shiftChipColor(idx);
+                    chip.innerHTML = '<span class="cat-chip-label"></span>' +
+                        '<button type="button" class="cat-chip-x" aria-label="Убрать смену">×</button>';
+                    chip.querySelector('.cat-chip-label').textContent =
+                        s.dayLabel + ' ' + s.start_time + '–' + s.end_time +
+                        (s.volunteer_needed ? ' (' + s.volunteer_needed + ' чел.)' : '');
+                    chip.querySelector('.cat-chip-x').addEventListener('click', function () {
+                        shifts.splice(idx, 1);
+                        sync();
+                    });
+                    selectedRow.appendChild(chip);
+                });
+                jsonInput.value = JSON.stringify(shifts.map(function (s) {
+                    return { day: s.day, start_time: s.start_time, end_time: s.end_time, volunteer_needed: s.volunteer_needed };
+                }));
+            }
+
+            function sync() { render(); }
+
+            var CHIP_COLORS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'];
+            function shiftChipColor(idx) { return 'cat-chip--' + CHIP_COLORS[idx % CHIP_COLORS.length]; }
+
+            function dpFmtLabel(iso) {
+                var p = iso.split('-');
+                return p[2] + '.' + p[1] + '.' + p[0];
+            }
+
+            addBtn.addEventListener('click', function () {
+                // Значение даты берём из hidden-поля, которое initDatepickers создаёт
+                // рядом с исходным input (сам input к этому моменту уже удалён из DOM).
+                var dayHidden = dayFieldParent.querySelector('input[type=hidden]');
+                var dayIso = dayHidden ? dayHidden.value : '';
+                if (!dayIso) {
+                    showError('Выберите дату смены в календаре.');
+                    return;
+                }
+                var start = (startInput.value || '').trim();
+                var end = (endInput.value || '').trim();
+                if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) {
+                    showError('Укажите время начала и окончания смены.');
+                    return;
+                }
+                if (end <= start) {
+                    showError('Время окончания должно быть позже времени начала.');
+                    return;
+                }
+                showError('');
+                shifts.push({
+                    day: dayIso,
+                    dayLabel: dpFmtLabel(dayIso),
+                    start_time: start,
+                    end_time: end,
+                    volunteer_needed: Math.max(0, parseInt(neededInput.value, 10) || 0),
+                });
+                sync();
+            });
+
+            render();
+        });
+    }
+
+    // ======================================================================
+    // Форма подачи заявки: выбор смен — те же чипы, что у категорий, но пул
+    // вариантов зависит от выбранного мероприятия. При смене select'а "Мероприятие"
+    // подтягиваем открытые смены этого меро через AJAX и пересобираем скрытый
+    // <select multiple name="selected_shifts"> — чип-виджет перерисовывается сам
+    // по событию chips:refresh (initCategoryChips слушает его на select'е).
+    // ======================================================================
+    function initApplicationForm(root) {
+        var form = root.querySelector('#application-form');
+        if (!form || form.dataset.appFormInit) return;
+        form.dataset.appFormInit = '1';
+
+        var eventSelect = form.querySelector('[name=event]');
+        var shiftsSelect = form.querySelector('[name=selected_shifts]');
+        if (!eventSelect || !shiftsSelect) return;
+
+        function loadShifts(eventId, preselectedIds) {
+            if (!eventId) {
+                shiftsSelect.innerHTML = '';
+                shiftsSelect.dispatchEvent(new Event('chips:refresh'));
+                return;
+            }
+            fetch('/applications/event-shifts/' + eventId + '/', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                shiftsSelect.innerHTML = '';
+                (data.shifts || []).forEach(function (shift) {
+                    var option = document.createElement('option');
+                    option.value = shift.id;
+                    option.textContent = shift.label;
+                    if (preselectedIds && preselectedIds.indexOf(String(shift.id)) !== -1) option.selected = true;
+                    shiftsSelect.appendChild(option);
+                });
+                shiftsSelect.dispatchEvent(new Event('chips:refresh'));
+            });
+        }
+
+        // При первой загрузке формы (редактирование/повторный рендер после ошибки)
+        // сервер уже прислал нужные <option> — сохраняем их selected-состояние.
+        var initialSelected = Array.prototype.filter.call(shiftsSelect.options, function (o) { return o.selected; })
+            .map(function (o) { return o.value; });
+        if (eventSelect.value && !shiftsSelect.options.length) {
+            loadShifts(eventSelect.value, initialSelected);
+        }
+
+        eventSelect.addEventListener('change', function () {
+            loadShifts(eventSelect.value, []);
+        });
+    }
+
+    // ======================================================================
+    // Одиночный date-picker (brandbook §6.3): текстовое поле-триггер (data-datepicker)
+    // раскрывает popover с одним месяцем; выбор даты закрывает popover сразу.
+    // Переиспользует .cal/.cal-grid стили из nexus.css (общие с Date Range Picker).
+    // ======================================================================
+    var DP_MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    var DP_DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+    function dpParseISO(s) {
+        if (!s) return null;
+        var p = s.split('-');
+        if (p.length !== 3) return null;
+        return new Date(+p[0], +p[1] - 1, +p[2]);
+    }
+    function dpToISO(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function dpFmt(d) { return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear(); }
+    function dpSameDay(a, b) { return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+
+    function initDatepickers(root) {
+        root.querySelectorAll('[data-datepicker]').forEach(function (input) {
+            if (input.dataset.dpInit) return;
+            input.dataset.dpInit = '1';
+
+            var selected = dpParseISO(input.value) || new Date();
+            var viewMonth = new Date(selected.getFullYear(), selected.getMonth(), 1);
+
+            var wrap = document.createElement('div');
+            wrap.className = 'datepicker-wrap';
+            input.parentNode.insertBefore(wrap, input);
+
+            // Прошлые даты разрешены (мероприятие можно редактировать задним числом) —
+            // календарь всегда виден целиком, как на странице отчётов, без popover.
+            var label = document.createElement('span');
+            label.className = 'pill neutral datepicker-value';
+            label.innerHTML = '<span class="dot"></span><span class="mono"></span>';
+            wrap.appendChild(label);
+
+            var cal = document.createElement('div');
+            cal.className = 'cal datepicker-inline';
+            wrap.appendChild(cal);
+
+            // Скрытое поле — реальное значение для сабмита формы (исходное имя
+            // Django-поля); видимый input больше не участвует в сабмите. Значение
+            // ставим сразу в dpToISO(selected) (а не только когда input.value был
+            // непустым) — календарь и так визуально показывает `selected` как текущий
+            // выбор (сегодня по умолчанию), так что скрытое поле должно ему соответствовать,
+            // иначе форма не отправляет дату, пока пользователь явно не кликнет по дню.
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = input.name;
+            hidden.value = dpToISO(selected);
+            input.removeAttribute('name');
+            input.remove();
+            wrap.appendChild(hidden);
+
+            function renderMonth() {
+                var year = viewMonth.getFullYear(), month = viewMonth.getMonth();
+                var firstDay = new Date(year, month, 1);
+                var startOffset = (firstDay.getDay() + 6) % 7;
+                var daysInMonth = new Date(year, month + 1, 0).getDate();
+                var today = new Date();
+
+                var html = '<div class="cal-head"><button type="button" data-dp-nav="-1">‹</button><span>' + DP_MONTHS[month] + ' ' + year + '</span><button type="button" data-dp-nav="1">›</button></div>';
+                html += '<div class="cal-grid">';
+                DP_DOW.forEach(function (d) { html += '<div class="dow">' + d + '</div>'; });
+                for (var i = 0; i < startOffset; i++) html += '<div class="day empty"></div>';
+                for (var day = 1; day <= daysInMonth; day++) {
+                    var d = new Date(year, month, day);
+                    var classes = ['day'];
+                    if (dpSameDay(d, selected)) classes.push('selected');
+                    if (dpSameDay(d, today)) classes.push('today');
+                    html += '<div class="' + classes.join(' ') + '" data-dp-date="' + dpToISO(d) + '">' + day + '</div>';
+                }
+                html += '</div>';
+                cal.innerHTML = html;
+                label.querySelector('.mono').textContent = dpFmt(selected);
+
+                cal.querySelectorAll('[data-dp-nav]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + parseInt(btn.getAttribute('data-dp-nav'), 10), 1);
+                        renderMonth();
+                    });
+                });
+                cal.querySelectorAll('.day:not(.empty)').forEach(function (cell) {
+                    cell.addEventListener('click', function () {
+                        selected = dpParseISO(cell.getAttribute('data-dp-date'));
+                        hidden.dataset.isoValue = dpToISO(selected);
+                        hidden.value = dpToISO(selected);
+                        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                        renderMonth();
+                    });
+                });
+            }
+
+            renderMonth();
+        });
+    }
+
+    // ======================================================================
+    // Time-picker (стиль Яндекс.Календаря): текстовое поле-триггер (только для
+    // чтения) + выпадающий список времени с шагом 30 минут, всплывающий поверх
+    // остальных полей формы (не раздвигает их). Список рендерится в <body> с
+    // position:fixed и координатами от input.getBoundingClientRect() — так он
+    // не обрезается overflow модалки/скролла (в отличие от position:absolute
+    // относительно обёртки поля).
+    // ======================================================================
+    function tpPad(n) { return String(n).padStart(2, '0'); }
+
+    function initTimepickers(root) {
+        root.querySelectorAll('[data-timepicker]').forEach(function (input) {
+            if (input.dataset.tpInit) return;
+            input.dataset.tpInit = '1';
+
+            var wrap = document.createElement('div');
+            wrap.className = 'timepicker-wrap';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+            input.classList.add('timepicker-input');
+            input.readOnly = true;
+
+            var list = document.createElement('div');
+            list.className = 'timepicker-list';
+            list.hidden = true;
+            document.body.appendChild(list);
+
+            var options = [];
+            for (var h = 0; h < 24; h++) {
+                options.push(tpPad(h) + ':00');
+                options.push(tpPad(h) + ':30');
+            }
+
+            function positionList() {
+                var rect = input.getBoundingClientRect();
+                list.style.left = rect.left + 'px';
+                list.style.top = (rect.bottom + 6) + 'px';
+                list.style.width = rect.width + 'px';
+            }
+
+            function renderList() {
+                list.innerHTML = '';
+                options.forEach(function (value) {
+                    var item = document.createElement('div');
+                    item.className = 'timepicker-option' + (value === input.value ? ' selected' : '');
+                    item.textContent = value;
+                    item.addEventListener('click', function () {
+                        input.value = value;
+                        closeList();
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    list.appendChild(item);
+                });
+            }
+
+            function openList() {
+                renderList();
+                positionList();
+                list.hidden = false;
+                var selectedEl = list.querySelector('.selected');
+                if (selectedEl) selectedEl.scrollIntoView({ block: 'center' });
+            }
+            function closeList() { list.hidden = true; }
+
+            input.addEventListener('click', function () {
+                list.hidden ? openList() : closeList();
+            });
+            document.addEventListener('click', function (event) {
+                if (event.target !== input && event.target !== list && !list.contains(event.target)) closeList();
+            });
+            window.addEventListener('scroll', function () { if (!list.hidden) positionList(); }, true);
+            window.addEventListener('resize', function () { if (!list.hidden) positionList(); });
+        });
+    }
+
+    // ======================================================================
+    // Обобщённый виджет выбора через чипы: выбранные сверху (с крестиком),
+    // доступные снизу (клик добавляет). Источник истины — скрытый
+    // <select multiple>. Каждый вариант получает стабильный цвет из палитры.
+    // Используется для категорий и тим-лидеров.
+    // ======================================================================
+    var CHIP_PALETTE = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'];
+    function chipColorClass(value) {
+        var h = 0, s = String(value);
+        for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+        return 'cat-chip--' + CHIP_PALETTE[h % CHIP_PALETTE.length];
+    }
+
+    function initCategoryChips(root) {
+        var widgets = root.querySelectorAll('[data-chip-select]');
+        widgets.forEach(function (widget) {
+            if (widget.dataset.chipsInit) return;
+            widget.dataset.chipsInit = '1';
+
+            var selectId = widget.getAttribute('data-chip-select');
+            var select = document.getElementById(selectId);
+            if (!select) return;
+            select.hidden = true;
+
+            var emptyText = widget.getAttribute('data-chip-empty') || 'Ничего не выбрано';
+            var selectedRow = widget.querySelector('[data-chips-selected]');
+            var availableRow = widget.querySelector('[data-chips-available]');
+            var searchInput = widget.querySelector('[data-chips-search]');
+
+            function render() {
+                var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                selectedRow.innerHTML = '';
+                availableRow.innerHTML = '';
+                var availableCount = 0;
+                Array.prototype.forEach.call(select.options, function (opt) {
+                    var color = chipColorClass(opt.value);
+                    if (opt.selected) {
+                        var chip = document.createElement('span');
+                        chip.className = 'cat-chip ' + color;
+                        chip.innerHTML = '<span class="cat-chip-label"></span>' +
+                            '<button type="button" class="cat-chip-x" aria-label="Убрать">×</button>';
+                        chip.querySelector('.cat-chip-label').textContent = opt.textContent;
+                        chip.querySelector('.cat-chip-x').addEventListener('click', function () {
+                            opt.selected = false;
+                            render();
+                        });
+                        selectedRow.appendChild(chip);
+                    } else {
+                        if (query && opt.textContent.toLowerCase().indexOf(query) === -1) return;
+                        availableCount++;
+                        var avail = document.createElement('button');
+                        avail.type = 'button';
+                        avail.className = 'cat-chip cat-chip--add ' + color;
+                        avail.innerHTML = '<span class="cat-chip-label"></span><span class="cat-chip-plus">+</span>';
+                        avail.querySelector('.cat-chip-label').textContent = opt.textContent;
+                        avail.addEventListener('click', function () {
+                            opt.selected = true;
+                            // Поиск намеренно не сбрасывается — можно добавить несколько
+                            // элементов подряд, продолжая фильтровать по тому же запросу.
+                            render();
+                        });
+                        availableRow.appendChild(avail);
+                    }
+                });
+                if (!selectedRow.children.length) {
+                    var empty = document.createElement('span');
+                    empty.className = 'cat-chips-empty';
+                    empty.textContent = emptyText;
+                    selectedRow.appendChild(empty);
+                }
+                if (searchInput && query && !availableCount) {
+                    var noResults = document.createElement('span');
+                    noResults.className = 'cat-chips-empty';
+                    noResults.textContent = 'Никого не найдено';
+                    availableRow.appendChild(noResults);
+                }
+            }
+
+            if (searchInput) {
+                // Фильтрация запускается через 1.5с после того, как пользователь перестал
+                // печатать — не при каждом нажатии клавиши.
+                var debounceTimer = null;
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(render, 1500);
+                });
+            }
+
+            // Перерисовать после быстрого создания записи (＋ добавляет <option>).
+            select.addEventListener('chips:refresh', render);
+            render();
+        });
+    }
+
+    initEventForm(document);
+
+    // ======================================================================
+    // Сортировка таблиц по клику на заголовок — три режима, переключаются по
+    // циклу: обычный (без сортировки, порядок с сервера) → по возрастанию →
+    // по убыванию → обычный. Стрелка показывается в правом нижнем углу активного
+    // заголовка. Значение для сравнения берётся из data-sort-value на <td>
+    // (если есть) или из текстового содержимого ячейки; сравнение — числовое,
+    // если все значения колонки — числа, иначе алфавитное (localeCompare).
+    // ======================================================================
+    function initSortableTables(root) {
+        root.querySelectorAll('table[data-sortable]').forEach(function (table) {
+            if (table.dataset.sortInit) return;
+            table.dataset.sortInit = '1';
+
+            var headers = Array.prototype.slice.call(table.querySelectorAll('thead th[data-sort-key]'));
+            var tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            var nextOrigIndex = 0;
+            function getRows() {
+                var rows = Array.prototype.filter.call(tbody.querySelectorAll('tr'), function (tr) {
+                    return tr.querySelector('td');
+                });
+                // Строки, подгруженные позже (infinite scroll), ещё не имеют origIndex —
+                // присваиваем по мере появления, чтобы "обычный" режим сортировки не
+                // ломался и продолжал восстанавливать порядок с сервера.
+                rows.forEach(function (row) {
+                    if (row.dataset.origIndex === undefined) row.dataset.origIndex = nextOrigIndex++;
+                });
+                return rows;
+            }
+
+            function cellValue(row, index) {
+                var cell = row.children[index];
+                if (!cell) return '';
+                return cell.hasAttribute('data-sort-value') ? cell.getAttribute('data-sort-value') : cell.textContent.trim();
+            }
+
+            function clearIndicators(except) {
+                headers.forEach(function (h) {
+                    if (h !== except) { h.removeAttribute('data-sort-dir'); }
+                });
+            }
+
+            headers.forEach(function (th, index) {
+                th.classList.add('sortable-th');
+                th.addEventListener('click', function () {
+                    var current = th.getAttribute('data-sort-dir');
+                    var next = current === 'asc' ? 'desc' : (current === 'desc' ? null : 'asc');
+                    clearIndicators(th);
+                    if (next) th.setAttribute('data-sort-dir', next);
+                    else th.removeAttribute('data-sort-dir');
+
+                    var rows = getRows();
+                    if (!next) {
+                        // Обычный режим — восстановить исходный порядок с сервера.
+                        rows.sort(function (a, b) {
+                            return (+a.dataset.origIndex || 0) - (+b.dataset.origIndex || 0);
+                        });
+                    } else {
+                        var allNumeric = rows.every(function (r) {
+                            var v = cellValue(r, index);
+                            return v === '' || !isNaN(parseFloat(v));
+                        });
+                        rows.sort(function (a, b) {
+                            var va = cellValue(a, index), vb = cellValue(b, index);
+                            var cmp;
+                            if (allNumeric) {
+                                cmp = (parseFloat(va) || 0) - (parseFloat(vb) || 0);
+                            } else {
+                                cmp = va.localeCompare(vb, 'ru');
+                            }
+                            return next === 'asc' ? cmp : -cmp;
+                        });
+                    }
+                    rows.forEach(function (r) { tbody.appendChild(r); });
+                });
+            });
+
+            // Запоминаем исходный порядок строк, чтобы можно было вернуться к нему.
+            getRows();
+
+            // Опциональная колонка с сортировкой по умолчанию при загрузке страницы.
+            var defaultTh = headers.find(function (h) { return h.hasAttribute('data-sort-default'); });
+            if (defaultTh) {
+                defaultTh.setAttribute('data-sort-dir', defaultTh.getAttribute('data-sort-default'));
+                defaultTh.dispatchEvent(new Event('click'));
+            }
+        });
+    }
+    initSortableTables(document);
+
+    // ======================================================================
+    // Постепенная подгрузка списков вместо пролистывания по стрелочкам:
+    // таблица с data-infinite-scroll="/url/" содержит <tbody data-rows
+    // data-next-page="2"> (partial с сервера при первом рендере уже отдаёт номер
+    // следующей страницы). "Часовой" элемент вставляется сразу после таблицы —
+    // при его появлении в зоне видимости (IntersectionObserver) подгружается
+    // следующая страница через fetch(url?page=N) и новые <tr> переносятся в конец
+    // текущего <tbody>. Останавливается сам, когда сервер перестаёт присылать
+    // data-next-page (последняя страница).
+    // ======================================================================
+    function initInfiniteScroll(root) {
+        root.querySelectorAll('table[data-infinite-scroll]').forEach(function (table) {
+            if (table.dataset.infiniteInit) return;
+            table.dataset.infiniteInit = '1';
+
+            var baseUrl = table.getAttribute('data-infinite-scroll');
+            var loading = false;
+
+            var sentinel = document.createElement('div');
+            sentinel.className = 'infinite-scroll-sentinel';
+            table.parentNode.insertBefore(sentinel, table.nextSibling);
+
+            function currentBody() { return table.querySelector('tbody[data-rows]'); }
+
+            function loadNext() {
+                var body = currentBody();
+                var nextPage = body ? body.getAttribute('data-next-page') : '';
+                if (!nextPage || loading) return;
+                loading = true;
+
+                var url = baseUrl + (baseUrl.indexOf('?') === -1 ? '?' : '&') + 'page=' + nextPage;
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (r) { return r.text(); })
+                    .then(function (html) {
+                        var temp = document.createElement('table');
+                        temp.innerHTML = html;
+                        var newBody = temp.querySelector('tbody[data-rows]');
+                        var target = currentBody();
+                        if (newBody && target) {
+                            target.setAttribute('data-next-page', newBody.getAttribute('data-next-page') || '');
+                            while (newBody.firstChild) target.appendChild(newBody.firstChild);
+                        } else if (target) {
+                            target.removeAttribute('data-next-page');
+                        }
+                        loading = false;
+                    })
+                    .catch(function () { loading = false; });
+            }
+
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) loadNext();
+                });
+            }, { rootMargin: '400px' });
+            observer.observe(sentinel);
+        });
+    }
+    initInfiniteScroll(document);
+
+    // ======================================================================
+    // Подтверждение перед назначением/снятием роли (настройки): показывает
+    // список выбранных ФИО и количество, требует явного OK.
+    // ======================================================================
+    document.querySelectorAll('[data-role-form]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            var select = form.querySelector('select[multiple]');
+            var selected = select ? Array.prototype.filter.call(select.options, function (o) { return o.selected; }) : [];
+            if (!selected.length) {
+                event.preventDefault();
+                alert('Выберите хотя бы одного пользователя.');
+                return;
+            }
+            var names = selected.map(function (o) { return o.textContent; }).join(', ');
+            var verb = form.getAttribute('data-confirm-verb') || 'применить действие к';
+            var question = 'Вы уверены, что хотите ' + verb + ': ' + names + ' (' + selected.length + ')?';
+            if (!confirm(question)) {
+                event.preventDefault();
+            }
+        });
+    });
+
+    // ======================================================================
+    // Кнопка "＋" рядом с select (организатор/локация/организация) открывает
+    // вложенную модалку создания новой записи. После создания — запись
+    // добавляется в select и выбирается. Данные формы меро не теряются.
+    // ======================================================================
+    var REF_CONFIG = {
+        location: {
+            title: 'Новая локация',
+            createUrl: '{% url "quick_create_location" %}',
+            fields: [
+                { name: 'name', label: 'Название локации', type: 'text', required: true },
+                { name: 'map_link', label: 'Ссылка на карту', type: 'text', required: false },
+            ],
+        },
+        organization: {
+            title: 'Новая организация',
+            createUrl: '{% url "quick_create_organization" %}',
+            fields: [
+                { name: 'name', label: 'Название организации', type: 'text', required: true },
+                { name: 'description', label: 'Описание', type: 'textarea', required: false },
+            ],
+        },
+        organizer: {
+            title: 'Новый организатор',
+            createUrl: '{% url "quick_create_organizer" %}',
+            fields: [
+                { name: 'first_name', label: 'Имя', type: 'text', required: true },
+                { name: 'last_name', label: 'Фамилия', type: 'text', required: false },
+                { name: 'phone', label: 'Телефон', type: 'text', required: false },
+                { name: 'telegram_username', label: 'Telegram', type: 'text', required: false },
+            ],
+        },
+        category: {
+            title: 'Новая категория',
+            createUrl: '{% url "quick_create_category" %}',
+            fields: [
+                { name: 'name', label: 'Название категории', type: 'text', required: true },
+            ],
+        },
+    };
+
+    function getCsrfToken() {
+        // Токен берём из формы в основной модалке или из первой формы на странице.
+        var input = (modalBody && modalBody.querySelector('[name=csrfmiddlewaretoken]'))
+            || document.querySelector('[name=csrfmiddlewaretoken]');
+        return input ? input.value : '';
+    }
+
+    // ======================================================================
+    // Явка в таблице на странице мероприятия — без отдельной формы/подтверждения.
+    // Чекбокс «Явка» переключает был/не был (не был → «без предупреждения» по
+    // умолчанию); select «Статус» уточняет причину отсутствия. Оба контрола одной
+    // строки синхронизированы между собой и шлют один и тот же запрос на сервер.
+    // ======================================================================
+    function sendParticipationStatus(row, id, status) {
+        var checkbox = row.querySelector('[data-attendance-checkbox]');
+        var select = row.querySelector('[data-attendance-status]');
+        if (checkbox) checkbox.disabled = true;
+        if (select) select.disabled = true;
+
+        fetch('/participations/' + id + '/set-status/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: 'status=' + encodeURIComponent(status) + '&csrfmiddlewaretoken=' + encodeURIComponent(getCsrfToken()),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (checkbox) checkbox.checked = (data.status === 'attended');
+            if (select) select.value = data.status;
+            var hoursCell = row.querySelector('[data-hours-cell]');
+            if (hoursCell) hoursCell.textContent = data.hours;
+        })
+        .catch(function () {
+            alert('Не удалось сохранить явку. Попробуйте ещё раз.');
+        })
+        .finally(function () {
+            if (checkbox) checkbox.disabled = false;
+            if (select) select.disabled = false;
+        });
+    }
+
+    document.querySelectorAll('[data-attendance-checkbox]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            var id = checkbox.getAttribute('data-participation-id');
+            var row = checkbox.closest('[data-participation-row]');
+            sendParticipationStatus(row, id, checkbox.checked ? 'attended' : 'absent_unexcused');
+        });
+    });
+
+    document.querySelectorAll('[data-attendance-status]').forEach(function (select) {
+        select.addEventListener('change', function () {
+            var id = select.getAttribute('data-participation-id');
+            var row = select.closest('[data-participation-row]');
+            sendParticipationStatus(row, id, select.value);
+        });
+    });
+
+    var quickAddBackdrop = document.getElementById('quick-add-backdrop');
+    var quickAddBody = document.getElementById('quick-add-body');
+    var quickAddTitle = document.getElementById('quick-add-title');
+    var quickAddClose = document.getElementById('quick-add-close');
+
+    function openQuickAddModal(kind, targetSelect) {
+        var config = REF_CONFIG[kind];
+        if (!config || !targetSelect) return;
+        quickAddTitle.textContent = config.title;
+
+        var html = '<div class="quick-add-error" data-quick-error hidden></div>';
+        config.fields.forEach(function (f) {
+            var widget = f.type === 'textarea'
+                ? '<textarea rows="2" name="' + f.name + '"' + (f.required ? ' required' : '') + '></textarea>'
+                : '<input type="text" name="' + f.name + '"' + (f.required ? ' required' : '') + '>';
+            html += '<div class="field"><label>' + f.label + (f.required ? ' *' : '') + '</label>' + widget + '</div>';
+        });
+        html += '<div class="event-form-actions">' +
+            '<button type="button" class="btn secondary" data-quick-cancel>Отмена</button>' +
+            '<button type="button" class="btn" data-quick-submit>Создать</button></div>';
+        quickAddBody.innerHTML = html;
+        quickAddBackdrop.hidden = false;
+
+        var firstInput = quickAddBody.querySelector('input, textarea');
+        if (firstInput) firstInput.focus();
+
+        var errorBox = quickAddBody.querySelector('[data-quick-error]');
+        quickAddBody.querySelector('[data-quick-cancel]').addEventListener('click', closeQuickAddModal);
+        quickAddBody.querySelector('[data-quick-submit]').addEventListener('click', function () {
+            errorBox.hidden = true;
+            var payload = new URLSearchParams();
+            payload.append('csrfmiddlewaretoken', getCsrfToken());
+            config.fields.forEach(function (f) {
+                var el = quickAddBody.querySelector('[name="' + f.name + '"]');
+                payload.append(f.name, el.value);
+            });
+
+            fetch(config.createUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: payload.toString(),
+            })
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+            .then(function (result) {
+                if (!result.ok) {
+                    var msgs = [];
+                    Object.keys(result.data.errors || {}).forEach(function (k) {
+                        (result.data.errors[k] || []).forEach(function (e) { msgs.push(e.message || e); });
+                    });
+                    errorBox.textContent = msgs.join(' ') || 'Не удалось создать запись.';
+                    errorBox.hidden = false;
+                    return;
+                }
+                var option = document.createElement('option');
+                option.value = result.data.id;
+                option.textContent = result.data.label;
+                option.selected = true;
+                targetSelect.appendChild(option);
+                // Если это виджет категорий с чипами — перерисовать его.
+                targetSelect.dispatchEvent(new Event('chips:refresh'));
+                closeQuickAddModal();
+            });
+        });
+    }
+
+    function closeQuickAddModal() {
+        quickAddBackdrop.hidden = true;
+        quickAddBody.innerHTML = '';
+    }
+
+    // Делегирование клика по "＋" — работает и на странице, и в динамически вставленной модалке.
+    document.addEventListener('click', function (event) {
+        var btn = event.target.closest('[data-add-ref]');
+        if (!btn) return;
+        event.preventDefault();
+        var kind = btn.getAttribute('data-add-ref');
+        var targetSelect = document.getElementById(btn.getAttribute('data-target'));
+        openQuickAddModal(kind, targetSelect);
+    });
+
+    quickAddClose.addEventListener('click', closeQuickAddModal);
+    quickAddBackdrop.addEventListener('click', function (event) {
+        if (event.target === quickAddBackdrop) closeQuickAddModal();
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !quickAddBackdrop.hidden) closeQuickAddModal();
+    });
+
+    // ======================================================================
+    // Копирование в буфер: кнопка «Поделиться» ([data-share-url]) копирует ссылку,
+    // кнопка «Скопировать опыт» ([data-copy-text]) — заранее собранный текст со
+    // ссылкой. Показывает короткое подтверждение прямо на кнопке.
+    // ======================================================================
+    function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        // Фолбэк для не-HTTPS/старых браузеров.
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        return Promise.resolve();
+    }
+
+    function flashCopied(btn) {
+        var original = btn.textContent;
+        btn.textContent = '✅ Скопировано';
+        btn.disabled = true;
+        setTimeout(function () { btn.textContent = original; btn.disabled = false; }, 1600);
+    }
+
+    document.addEventListener('click', function (event) {
+        var btn = event.target.closest('[data-share-url], [data-copy-text]');
+        if (!btn) return;
+        event.preventDefault();
+        var text = btn.getAttribute('data-share-url') || btn.getAttribute('data-copy-text') || '';
+        copyToClipboard(text).then(function () { flashCopied(btn); });
+    });
+</script>
+</body>
+</html>

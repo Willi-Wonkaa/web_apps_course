@@ -1,0 +1,24 @@
+{% extends 'blog/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="card" style="max-width:500px;">
+    <form method="post" data-modal-form>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="field">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {% if form.title.errors %}<div class="field-error">{{ form.title.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="field">
+            {{ form.date.label_tag }}
+            {{ form.date }}
+            {% if form.date.errors %}<div class="field-error">{{ form.date.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="event-form-actions">
+            <button type="submit" class="btn">{{ submit_label|default:'Сохранить' }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

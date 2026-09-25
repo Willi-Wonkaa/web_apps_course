@@ -1,0 +1,55 @@
+{% extends 'blog/base.html' %}
+{% block title %}Превью импорта{% endblock %}
+{% block content %}
+<h1>Превью импорта</h1>
+
+{% if errors %}
+<div class="card">
+    <h3>Ошибки</h3>
+    <ul>
+        {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <h3 style="padding:20px 20px 0;">Будет создано заявок: {{ rows|length }}</h3>
+    <table class="responsive-table">
+        <thead><tr><th>Мероприятие</th><th>ФИО</th><th>Telegram</th><th>Телефон</th><th>Профиль</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td data-label="Мероприятие">
+                    {{ row.event_title }}
+                    {% if row.event_missing %}
+                        <br><span class="pill warning"><span class="dot"></span>Мероприятие будет создано автоматически</span>
+                        <div style="color:var(--text-secondary); font-size:0.82rem; margin-top:0.25rem;">
+                            {% if row.event_start_date == row.event_end_date %}
+                                Дата: {{ row.event_start_date }}
+                            {% else %}
+                                Период: {{ row.event_start_date }} — {{ row.event_end_date }}
+                                (день мероприятия будет создан на каждую дату периода)
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </td>
+                <td data-label="ФИО">{{ row.first_name }}{% if row.last_name %} {{ row.last_name }}{% endif %}</td>
+                <td data-label="Telegram">{{ row.telegram_username|default:"—" }}</td>
+                <td data-label="Телефон" class="mono">{{ row.phone|default:"—" }}</td>
+                <td data-label="Профиль">{{ row.matched_user_label }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">Нет строк для импорта.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if rows %}
+    <div style="padding:16px 20px;">
+    <form method="post" action="{% url 'import_commit' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">Подтвердить импорт</button>
+    </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'blog/base.html' %}
+{% block title %}Необработанные заявки{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+    <h1>Необработанные заявки</h1>
+    {% if pending_count %}
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span class="pill warning"><span class="dot"></span>Осталось обработать: {{ pending_count }}</span>
+        <form method="post" action="{% url 'application_process_all' %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="btn">Обработать все заявки</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <input type="search" id="apps-search" placeholder="Поиск по мероприятию, ФИО, телефону, telegram…" style="margin:0;">
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="responsive-table" data-sortable id="apps-table">
+        <thead><tr><th data-sort-key="event">Мероприятие</th><th data-sort-key="name">ФИО</th><th data-sort-key="tg">Telegram</th><th data-sort-key="phone">Телефон</th><th data-sort-key="date" data-sort-default="desc">Подано</th><th></th></tr></thead>
+        <tbody>
+        {% for application in applications %}
+            <tr data-href="{% url 'event_detail' application.event_id %}#applications" data-search="{{ application.event.title }} {{ application.first_name }} {{ application.last_name }} {{ application.telegram_username }} {{ application.phone }}">
+                <td data-label="Мероприятие" data-sort-value="{{ application.event.title }}">{{ application.event.title }}</td>
+                <td data-label="ФИО" data-sort-value="{{ application.first_name }} {{ application.last_name }}">{{ application.first_name }}{% if application.last_name %} {{ application.last_name }}{% endif %}</td>
+                <td data-label="Telegram" data-sort-value="{{ application.telegram_username }}">{{ application.telegram_username|default:"—" }}</td>
+                <td data-label="Телефон" class="mono" data-sort-value="{{ application.phone }}">{{ application.phone|default:"—" }}</td>
+                <td data-label="Подано" class="mono" data-sort-value="{{ application.submitted_at|default:application.created_at|date:'U' }}">{{ application.submitted_at|default:application.created_at }}</td>
+                <td data-label="">
+                    <form method="post" action="{% url 'application_process' application.id %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="approved">
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn" style="padding:6px 12px;">Принять</button>
+                    </form>
+                    <form method="post" action="{% url 'application_process' application.id %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="rejected">
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn danger" style="padding:6px 12px;">Отклонить</button>
+                    </form>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">Необработанных заявок нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+(function () {
+    var searchInput = document.getElementById('apps-search');
+    var rows = document.querySelectorAll('#apps-table tbody tr[data-href]');
+    var debounceTimer = null;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            var query = searchInput.value.trim().toLowerCase();
+            rows.forEach(function (row) {
+                row.hidden = !!query && row.getAttribute('data-search').toLowerCase().indexOf(query) === -1;
+            });
+        }, 1500);
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'blog/base.html' %}
+{% load custom_tags %}
+{% block title %}Мероприятия{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Мероприятия</h1>
+    {% if is_manager %}<a href="{% url 'event_create' %}" class="btn" data-modal data-modal-title="Новое мероприятие">+ Новое мероприятие</a>{% endif %}
+</div>
+
+<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+    <input type="search" id="event-search" placeholder="Поиск по названию, локации, организации…" style="max-width:360px; margin:0;">
+    <label style="display:flex; align-items:center; gap:8px; margin:0; font-weight:500; font-size:.88rem; white-space:nowrap;">
+        <input type="checkbox" id="hide-passed" {% if hide_passed %}checked{% endif %} style="width:auto; margin:0;">
+        Скрыть прошедшие
+    </label>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="responsive-table" data-sortable id="events-table">
+        <thead>
+            <tr>
+                <th data-sort-key="title">Название</th>
+                <th data-sort-key="location">Локация</th>
+                <th data-sort-key="date" data-sort-default="asc">Дата</th>
+                <th data-sort-key="status">Статус</th>
+                <th data-sort-key="recruit">Набор</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for event in events %}
+            <tr data-href="{% url 'event_detail' event.id %}" data-search="{{ event.title }} {{ event.location.name }} {{ event.organization.name }}" data-passed="{% if event.compute_status == 'passed' or event.compute_status == 'finished' %}1{% else %}0{% endif %}">
+                <td data-label="Название" data-sort-value="{{ event.title }}"><a href="{% url 'event_detail' event.id %}">{{ event.title }}</a></td>
+                <td data-label="Локация" data-sort-value="{{ event.location.name }}">{{ event.location.name|default:"—" }}</td>
+                <td data-label="Дата" class="mono" data-sort-value="{{ event.first_day|date:'Y-m-d'|default:'' }}">{% event_date_range event.first_day event.last_day %}</td>
+                <td data-label="Статус" data-sort-value="{{ event.compute_status }}">{% event_status_pill event %}</td>
+                <td data-label="Набор" data-sort-value="{% if event.shifts.all|has_open_shift %}1{% else %}0{% endif %}">
+                    {% if event.shifts.all|has_open_shift %}
+                        <span class="pill success"><span class="dot"></span>Открыт</span>
+                    {% else %}
+                        <span class="pill neutral"><span class="dot"></span>Закрыт</span>
+                    {% endif %}
+                </td>
+                <td data-label=""><a href="{% url 'event_detail' event.id %}">Подробнее →</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">Мероприятий пока нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+(function () {
+    var hidePassed = document.getElementById('hide-passed');
+    var searchInput = document.getElementById('event-search');
+    var rows = document.querySelectorAll('#events-table tbody tr[data-href]');
+
+    function applyFilters() {
+        var query = (searchInput.value || '').trim().toLowerCase();
+        rows.forEach(function (row) {
+            var matchesSearch = !query || row.getAttribute('data-search').toLowerCase().indexOf(query) !== -1;
+            var matchesPassed = !hidePassed.checked || row.getAttribute('data-passed') !== '1';
+            row.hidden = !(matchesSearch && matchesPassed);
+        });
+    }
+
+    hidePassed.addEventListener('change', function () {
+        var url = new URL(window.location.href);
+        if (hidePassed.checked) url.searchParams.set('hide_passed', '1');
+        else url.searchParams.delete('hide_passed');
+        window.location.href = url.toString();
+    });
+
+    var debounceTimer = null;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 1500);
+    });
+})();
+</script>
+{% endblock %}

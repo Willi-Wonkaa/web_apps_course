@@ -1,0 +1,8 @@
+{% extends 'blog/base.html' %}
+{% block title %}{{ title|default:'Подать заявку' }}{% endblock %}
+{% block content %}
+<h1>{{ title|default:'Подать заявку на мероприятие' }}</h1>
+<div class="card" style="max-width:600px;">
+    {% include 'blog/partials/_application_form_body.html' %}
+</div>
+{% endblock %}

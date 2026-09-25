@@ -1,0 +1,12 @@
+{% extends 'blog/base.html' %}
+{% block title %}Импорт заявок{% endblock %}
+{% block content %}
+<h1>Импорт заявок из Excel</h1>
+<div class="card" style="max-width:500px;">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Загрузить и посмотреть превью</button>
+    </form>
+</div>
+{% endblock %}

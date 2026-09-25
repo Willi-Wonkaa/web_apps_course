@@ -1,0 +1,38 @@
+{# Секция назначения/снятия роли в настройках: капча + chip-select с поиском +
+   подтверждение перед отправкой. Параметры: action, title, hint, empty_text,
+   submit_label, submit_class, section (dict из role_sections[action]). #}
+<div class="card">
+    <h3>{{ title }}</h3>
+    <p style="color:var(--text-secondary); font-size:0.85rem;">{{ hint }}</p>
+
+    {% if section.users_count == 0 %}
+        <p style="color:var(--text-secondary);">Подходящих пользователей нет.</p>
+    {% else %}
+    <form method="post" data-role-form data-confirm-verb="{{ confirm_verb }}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="{{ action }}">
+
+        <div class="field">
+            <label>Поиск</label>
+            <div class="category-chips" data-chip-select="{{ section.form.users.id_for_label }}" data-chip-empty="{{ empty_text }}">
+                <div class="cat-chips-search">
+                    <input type="text" placeholder="Начните вводить имя или фамилию…" data-chips-search>
+                </div>
+                <div class="cat-chips-row" data-chips-selected></div>
+                <div class="cat-chips-available-wrap">
+                    <div class="cat-chips-available-label">Доступно ({{ section.users_count }}) — нажмите, чтобы добавить:</div>
+                    <div class="cat-chips-row" data-chips-available></div>
+                </div>
+            </div>
+            {{ section.form.users }}
+        </div>
+
+        <div class="field" style="max-width:220px;">
+            <label>{{ section.captcha_question }} =</label>
+            <input type="number" name="captcha_answer" required>
+        </div>
+
+        <button type="submit" class="btn {{ submit_class }}">{{ submit_label }}</button>
+    </form>
+    {% endif %}
+</div>

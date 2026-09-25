@@ -1,0 +1,21 @@
+{% extends 'blog/base.html' %}
+{% block title %}Подтверждение: принять все заявки{% endblock %}
+{% block content %}
+<h1>Принять все заявки?</h1>
+{% if event %}<p style="color:var(--text-secondary);">«{{ event.title }}»</p>{% endif %}
+
+<div class="card">
+    <p>Необработанных заявок: <b>{{ pending_count }}</b>. Если принять их все, наберётся
+       <b>{{ overflow.total_after }}</b> человек — нужно было {{ overflow.needed }}.</p>
+    <p>Это на <b>{{ overflow.extra }}</b> человек больше плана
+       (<b>{{ overflow.pct }}%</b> от заявленного количества).</p>
+    <p>Принять всех, несмотря на перебор?</p>
+
+    <form method="post" action="{{ confirm_action_url }}" style="display:flex; gap:0.5rem; margin-top:1rem;">
+        {% csrf_token %}
+        <input type="hidden" name="confirm" value="yes">
+        <button type="submit" class="btn danger">Да, принять всех</button>
+        <a href="{{ redirect_url }}" class="btn secondary">Нет, вернуться к заявкам</a>
+    </form>
+</div>
+{% endblock %}

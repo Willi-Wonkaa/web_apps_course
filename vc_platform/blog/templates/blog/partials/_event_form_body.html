@@ -1,0 +1,142 @@
+<form method="post" data-modal-form class="event-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="field">
+        {{ form.title.label_tag }}
+        {{ form.title }}
+        {% if form.title.errors %}<div class="field-error">{{ form.title.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.description.label_tag }}
+        {{ form.description }}
+        {% if form.description.errors %}<div class="field-error">{{ form.description.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        <label>Категории</label>
+        <div class="category-chips" data-chip-select="{{ form.categories.id_for_label }}" data-chip-empty="Категории не выбраны">
+            <div class="cat-chips-row" data-chips-selected></div>
+            <div class="cat-chips-available-wrap">
+                <div class="cat-chips-available-label">Доступные категории — нажмите, чтобы добавить:</div>
+                <div class="cat-chips-row" data-chips-available></div>
+                <button type="button" class="btn secondary btn-sm add-ref-btn" data-add-ref="category" data-target="{{ form.categories.id_for_label }}" style="margin-top:8px;">＋ Новая категория</button>
+            </div>
+        </div>
+        {{ form.categories }}
+    </div>
+
+    <div class="field">
+        <label>Тим-лидеры</label>
+        <div class="category-chips" data-chip-select="{{ form.team_leads.id_for_label }}" data-chip-empty="Тим-лидеры не назначены">
+            <div class="cat-chips-row" data-chips-selected></div>
+            <div class="cat-chips-available-wrap">
+                <div class="cat-chips-available-label">Доступные пользователи — нажмите, чтобы назначить:</div>
+                <div class="cat-chips-row" data-chips-available></div>
+            </div>
+        </div>
+        {{ form.team_leads }}
+        {% if form.require_shift %}
+        <div class="field-hint">Если не выбрать никого, тим-лидером назначитесь вы сами.</div>
+        {% endif %}
+    </div>
+
+    {# ─── Организатор ─── #}
+    <div class="field">
+        {{ form.organization.label_tag }}
+        <div class="select-with-add">
+            {{ form.organization }}
+            <button type="button" class="btn secondary add-ref-btn" data-add-ref="organization" data-target="{{ form.organization.id_for_label }}">＋</button>
+        </div>
+        {% if form.organization.errors %}<div class="field-error">{{ form.organization.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.organizer.label_tag }}
+        <div class="select-with-add">
+            {{ form.organizer }}
+            <button type="button" class="btn secondary add-ref-btn" data-add-ref="organizer" data-target="{{ form.organizer.id_for_label }}">＋</button>
+        </div>
+        {% if form.organizer.errors %}<div class="field-error">{{ form.organizer.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.location.label_tag }}
+        <div class="select-with-add">
+            {{ form.location }}
+            <button type="button" class="btn secondary add-ref-btn" data-add-ref="location" data-target="{{ form.location.id_for_label }}">＋</button>
+        </div>
+        {% if form.location.errors %}<div class="field-error">{{ form.location.errors|striptags }}</div>{% endif %}
+    </div>
+
+    {# ─── Смены (обязательны при создании — без хотя бы одной смены меро не создать) ───
+       Добавленные смены показываются чипами сверху (как категории), с крестиком для
+       удаления. Ниже — поля одной новой смены + кнопка "➕ Добавить смену". Итоговый
+       список хранится в JSON (shift-chips.js ниже) и уходит на сервер в shifts_json. #}
+    {% if form.require_shift %}
+    <hr class="form-divider">
+    <h3 style="margin-top:0;">Смены мероприятия</h3>
+    <p class="field-hint" style="margin-top:-8px;">У мероприятия должна быть хотя бы одна смена.</p>
+    {% if form.non_field_errors %}{% for e in form.non_field_errors %}{% if 'смену' in e %}<div class="form-errors">{{ e }}</div>{% endif %}{% endfor %}{% endif %}
+
+    <div class="shift-chips-row" data-shift-chips-selected></div>
+    <input type="hidden" name="shifts_json" data-shift-chips-json value="[]">
+
+    <div class="field">
+        <label>Дата</label>
+        <input type="text" data-shift-day data-datepicker autocomplete="off">
+    </div>
+    <div class="field-row" style="display:flex; gap:12px; align-items:flex-end;">
+        <div class="field" style="flex:1;">
+            <label>Время начала</label>
+            <input type="text" data-shift-start data-timepicker autocomplete="off" value="10:00">
+        </div>
+        <div class="field" style="flex:1;">
+            <label>Время окончания</label>
+            <input type="text" data-shift-end data-timepicker autocomplete="off" value="18:00">
+        </div>
+        <div class="field" style="flex:1;">
+            <label>Нужно волонтёров</label>
+            <input type="number" data-shift-needed value="0" min="0">
+        </div>
+        <button type="button" class="btn secondary shift-add-btn" data-shift-add title="Добавить смену" aria-label="Добавить смену">＋</button>
+    </div>
+    <div class="field-error" data-shift-error hidden></div>
+    {% for sf in form.shift_forms %}
+        {% if sf.errors %}<div class="field-error">Смена {{ forloop.counter }}: {{ sf.errors.as_text }}</div>{% endif %}
+    {% endfor %}
+    {% endif %}
+
+    {# ─── Ссылки ─── #}
+    <div class="field">
+        {{ form.chat_link.label_tag }}
+        {{ form.chat_link }}
+        {% if form.chat_link.errors %}<div class="field-error">{{ form.chat_link.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.post_in_chanel_link.label_tag }}
+        {{ form.post_in_chanel_link }}
+        {% if form.post_in_chanel_link.errors %}<div class="field-error">{{ form.post_in_chanel_link.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.dobro_ru_link.label_tag }}
+        {{ form.dobro_ru_link }}
+        {% if form.dobro_ru_link.errors %}<div class="field-error">{{ form.dobro_ru_link.errors|striptags }}</div>{% endif %}
+    </div>
+
+    {# ─── Поля закрытия/пост-меро (только при редактировании) ─── #}
+    {% if form.show_closing_fields %}
+    <hr class="form-divider">
+    <div class="field">{{ form.people_helped.label_tag }}{{ form.people_helped }}</div>
+    <div class="field">{{ form.internal_comment.label_tag }}{{ form.internal_comment }}</div>
+    <div class="field">{{ form.letter.label_tag }}{{ form.letter }}</div>
+    {% endif %}
+
+    <div class="event-form-actions">
+        <button type="submit" class="btn">{{ submit_label|default:'Сохранить' }}</button>
+    </div>
+</form>

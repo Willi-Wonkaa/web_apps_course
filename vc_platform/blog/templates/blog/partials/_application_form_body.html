@@ -1,0 +1,41 @@
+<form method="post" data-modal-form class="event-form" id="application-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="field">
+        {{ form.event.label_tag }}
+        {{ form.event }}
+        {% if form.event.errors %}<div class="field-error">{{ form.event.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        <label>Смены</label>
+        <div class="category-chips" data-chip-select="{{ form.selected_shifts.id_for_label }}" data-chip-empty="Смены не выбраны — заявка будет подана на все открытые смены меро">
+            <div class="cat-chips-row" data-chips-selected></div>
+            <div class="cat-chips-available-wrap">
+                <div class="cat-chips-available-label">Доступные смены — нажмите, чтобы добавить:</div>
+                <div class="cat-chips-row" data-chips-available></div>
+            </div>
+        </div>
+        {{ form.selected_shifts }}
+        <div class="field-hint">Если не выбрать ни одной смены — заявка подаётся на все открытые смены мероприятия.</div>
+        {% if form.selected_shifts.errors %}<div class="field-error">{{ form.selected_shifts.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.functions.label_tag }}
+        {{ form.functions }}
+        {% if form.functions.errors %}<div class="field-error">{{ form.functions.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.role_in_event.label_tag }}
+        {{ form.role_in_event }}
+        {% if form.role_in_event.errors %}<div class="field-error">{{ form.role_in_event.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="event-form-actions">
+        <button type="submit" class="btn">{{ submit_label|default:'Отправить заявку' }}</button>
+    </div>
+</form>

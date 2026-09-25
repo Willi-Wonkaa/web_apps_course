@@ -1,0 +1,43 @@
+{% extends 'blog/base.html' %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<h1>Здравствуйте, {{ user.full_name }}</h1>
+<span class="pill info"><span class="dot"></span>{{ role_label }}</span>
+
+<div class="stat-grid" style="margin-top:1rem;">
+    <div class="stat-tile">
+        <div class="value">{{ user.total_hours }}</div>
+        <div class="label">Часов всего</div>
+    </div>
+    <div class="stat-tile">
+        <div class="value">{{ user.season_hours }}</div>
+        <div class="label">Часов за сезон</div>
+    </div>
+    <div class="stat-tile">
+        <div class="value">{{ user.total_event_count }}</div>
+        <div class="label">Мероприятий всего</div>
+    </div>
+    {% if is_manager %}
+    <div class="stat-tile">
+        <div class="value">{{ new_applications_count }}</div>
+        <div class="label">Новых заявок</div>
+    </div>
+    <div class="stat-tile">
+        <div class="value">{{ open_events_count }}</div>
+        <div class="label">Открытых наборов</div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top:1.5rem;">
+    <h3>Быстрые действия</h3>
+    <a href="{% url 'event_list' %}" class="btn">Мероприятия</a>
+    <a href="{% url 'application_create' %}" class="btn secondary" data-modal data-modal-title="Подать заявку на мероприятие">Подать заявку</a>
+    {% if is_manager %}
+        <a href="{% url 'event_create' %}" class="btn secondary" data-modal data-modal-title="Новое мероприятие">Новое мероприятие</a>
+        <a href="{% url 'import_preview' %}" class="btn secondary">Импорт Excel</a>
+        <a href="{% url 'pending_applications' %}" class="btn secondary">Необработанные заявки</a>
+        <a href="{% url 'report_period' %}" class="btn secondary">Отчёт за период</a>
+    {% endif %}
+</div>
+{% endblock %}

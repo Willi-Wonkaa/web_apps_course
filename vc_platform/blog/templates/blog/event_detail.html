@@ -1,0 +1,315 @@
+{% extends 'blog/base.html' %}
+{% load custom_tags %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ event.title }}</h1>
+    {% if is_manager %}
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        {% if not event.published_at and event.event_status != 'finished' %}
+        <form method="post" action="{% url 'event_publish' event.id %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="btn">📣 Опубликовать</button>
+        </form>
+        {% endif %}
+        {% if event.published_at and not event.broadcast_sent_at and event.event_status != 'finished' %}
+        <form method="post" action="{% url 'event_broadcast' event.id %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="btn secondary">🔔 Сделать рассылку</button>
+        </form>
+        {% elif event.broadcast_sent_at %}
+        <span class="pill success"><span class="dot"></span>Рассылка отправлена</span>
+        {% endif %}
+        {% if event.published_at %}
+        <button type="button" class="btn secondary" data-share-url="{{ share_url }}">🔗 Поделиться</button>
+        {% endif %}
+        {% if event.event_status != 'finished' %}
+        <a href="{% url 'event_edit' event.id %}" class="btn secondary" data-modal data-modal-title="Редактировать: {{ event.title }}">Редактировать</a>
+        {% endif %}
+        {% if closing_checklist %}
+        <a href="{% url 'event_close' event.id %}" class="btn {% if closing_checklist.ready %}danger{% else %}secondary{% endif %}">
+            {% if closing_checklist.ready %}✅ Завершить мероприятие{% else %}Завершить мероприятие{% endif %}
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if has_open_recruitment and not is_finished %}
+        {% if my_active_application %}
+        <a href="{% url 'application_edit' my_active_application.id %}" class="btn secondary" data-modal data-modal-title="Моя заявка: {{ event.title }}">📝 Моя заявка на это мероприятие</a>
+        {% else %}
+        <a href="{% url 'application_create' %}?event={{ event.id }}" class="btn" data-modal data-modal-title="Подать заявку: {{ event.title }}">✅ Подать заявку на мероприятие</a>
+        {% endif %}
+    {% endif %}
+</div>
+
+{% if is_finished %}
+<div class="card" style="background:var(--neutral-soft);">
+    <p style="margin:0;"><span class="pill neutral"><span class="dot"></span>Мероприятие завершено</span> — заявки, явка и набор больше не редактируются, доступен только просмотр.</p>
+</div>
+{% endif %}
+
+{% if application_change_logs %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h3 style="margin:0;">🔔 Изменения по заявкам</h3>
+        <form method="post" action="{% url 'event_change_log_mark_read' event.id %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="btn secondary btn-sm">Прочитано</button>
+        </form>
+    </div>
+    {% for log in application_change_logs %}
+        <p style="border-bottom:1px solid var(--border-subtle); padding-bottom:8px; margin-bottom:8px; margin-top:12px;">
+            {% if log.kind == 'new' %}<span class="pill success"><span class="dot"></span>Новая</span>
+            {% elif log.kind == 'changed' %}<span class="pill warning"><span class="dot"></span>Изменена</span>
+            {% elif log.kind == 'withdrawn' %}<span class="pill danger"><span class="dot"></span>Отказ</span>{% endif %}
+            {{ log.text }}
+            <br><span class="mono" style="color:var(--text-tertiary); font-size:12px;">{{ log.created_at|date:"d.m.Y H:i" }}</span>
+        </p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if can_manage_applications and comments %}
+<div class="card">
+    <h3>📝 Комментарии к мероприятию</h3>
+    {% for c in comments %}
+        <p style="border-bottom:1px solid var(--border-subtle); padding-bottom:8px; margin-bottom:8px;">
+            {{ c.text|linebreaksbr }}
+            <br><span class="mono" style="color:var(--text-tertiary); font-size:12px;">{{ c.created_at|date:"d.m.Y H:i" }}</span>
+        </p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if comment_form %}
+<div class="card">
+    <h3>Добавить комментарий</h3>
+    <form method="post" action="{% url 'event_comment_add' event.id %}" style="max-width:500px;">
+        {% csrf_token %}
+        {{ comment_form.text }}
+        <button type="submit" class="btn secondary" style="margin-top:8px;">Добавить</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="card">
+    <p>{{ event.description|default:"Без описания" }}</p>
+    <p style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+       {% event_status_pill event %}
+    </p>
+    <p>Локация: {{ event.location.name|default:"—" }} · Организация: {{ event.organization.name|default:"—" }}</p>
+    <div class="cat-chips-row" style="margin-top:6px;">
+        <span style="color:var(--text-secondary); font-size:13px;">Категории:</span>
+        {% for category in categories %}
+            <span class="cat-chip {{ category.id|chip_color }}"><span class="cat-chip-label">{{ category.name }}</span></span>
+        {% empty %}
+            <span style="color:var(--text-secondary); font-size:13px;">не указаны</span>
+        {% endfor %}
+    </div>
+    {% if is_manager %}
+        <p>{% if event.published_at %}Опубликовано: {{ event.published_at }}{% else %}<span class="pill warning"><span class="dot"></span>Не опубликовано</span> — волонтёры ещё не получили уведомление в боте{% endif %}</p>
+    {% endif %}
+    {% if event.people_helped is not None %}<p>Людям помогли: {{ event.people_helped }}</p>{% endif %}
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <h3 style="padding:20px 20px 0;">Смены мероприятия</h3>
+    <p style="padding:0 20px; color:var(--text-secondary); font-size:13px;">Ближайшая/идущая смена — сверху, прошедшие уходят в конец списка.</p>
+    <table class="responsive-table shift-table" data-sortable>
+        <thead>
+            <tr>
+                <th data-sort-key="date">Дата</th><th data-sort-key="start">Начало</th><th data-sort-key="end">Окончание</th><th data-sort-key="location">Локация</th><th data-sort-key="needed" class="num">Нужно волонтёров</th><th data-sort-key="recruit">Набор</th>
+                {% if is_manager and event.event_status != 'finished' %}<th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for shift in shifts %}
+            {% with shift_status=shift.compute_status %}
+            <tr class="shift-row shift-row--{{ shift_status }}">
+                <td data-label="Дата" class="mono" data-sort-value="{{ shift.day|date:'Y-m-d' }}">{{ shift.day }}</td>
+                <td data-label="Начало" class="mono" data-sort-value="{{ shift.start_time|date:'U' }}">{{ shift.start_time|time:"H:i" }}</td>
+                <td data-label="Окончание" class="mono" data-sort-value="{{ shift.end_time|date:'U' }}">{{ shift.end_time|time:"H:i" }}</td>
+                <td data-label="Локация" data-sort-value="{{ shift.location.name }}">{{ shift.location.name|default:"—" }}</td>
+                <td data-label="Нужно волонтёров" class="num mono" data-sort-value="{{ shift.volunteer_needed }}">{{ shift.volunteer_needed }}</td>
+                <td data-label="Набор" data-sort-value="{{ shift.recruit_status }}">
+                    {% if shift.recruit_status == 'open' %}<span class="pill success"><span class="dot"></span>Открыт</span>
+                    {% else %}<span class="pill neutral"><span class="dot"></span>Закрыт</span>{% endif %}
+                    {% if can_edit_applications %}
+                    <form method="post" action="{% url 'shift_toggle_recruit' event.id shift.id %}" class="inline" style="margin-top:4px;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn secondary btn-sm">
+                            {% if shift.recruit_status == 'open' %}Закрыть{% else %}Открыть{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+                {% if is_manager and event.event_status != 'finished' %}
+                <td data-label="" class="row-actions" style="white-space:nowrap;">
+                    <a href="{% url 'event_shift_edit' event.id shift.id %}" class="btn secondary btn-sm" data-modal data-modal-title="Редактировать смену: {{ event.title }}">Изменить</a>
+                    <form method="post" action="{% url 'event_shift_delete' event.id shift.id %}" class="inline" onsubmit="return confirm('Удалить эту смену мероприятия?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn danger btn-sm">Удалить</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endwith %}
+        {% empty %}
+            <tr><td colspan="{% if is_manager %}7{% else %}6{% endif %}">Смены не заданы.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if is_manager and event.event_status != 'finished' %}
+        <div style="padding:16px 20px;"><a href="{% url 'event_shift_add' event.id %}" class="btn secondary" data-modal data-modal-title="Новая смена: {{ event.title }}">+ Добавить смену</a></div>
+    {% endif %}
+</div>
+
+{% if can_manage_applications and shifts_with_participations %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <h3 style="padding:20px 20px 0;">Явка</h3>
+    {% if can_edit_applications %}
+    <p style="padding:0 20px; color:var(--text-secondary); font-size:13px;">Все, кто подал заявку, по умолчанию считаются пришедшими. Отметьте, если было иначе — часы и статус обновятся сразу.</p>
+    {% endif %}
+    {% for entry in shifts_with_participations %}
+        <p style="padding:0 20px; color:var(--text-secondary); font-size:13px;">{{ entry.shift.day }} ({{ entry.shift.start_time|time:"H:i" }}–{{ entry.shift.end_time|time:"H:i" }})</p>
+        <table class="responsive-table" data-sortable style="margin-bottom:16px;">
+            <thead><tr><th data-sort-key="name">Волонтёр</th><th style="width:70px;">Явка</th><th data-sort-key="hours" class="num">Часы</th><th data-sort-key="status">Статус</th></tr></thead>
+            <tbody>
+            {% for p in entry.participations %}
+                <tr data-participation-row="{{ p.id }}">
+                    <td data-label="Волонтёр" data-sort-value="{{ p.user.full_name }}"><a href="{% url 'profile_detail' p.user_id %}">{{ p.user.full_name }}</a></td>
+                    <td data-label="Явка">
+                        <input type="checkbox" data-attendance-checkbox data-participation-id="{{ p.id }}" {% if p.status == 'attended' %}checked{% endif %} {% if not can_edit_applications %}disabled{% endif %} style="width:18px; height:18px; margin:0;">
+                    </td>
+                    <td data-label="Часы" class="num mono" data-hours-cell data-sort-value="{{ p.hours }}">{{ p.hours }}</td>
+                    <td data-label="Статус" data-sort-value="{{ p.status }}">
+                        {% if can_edit_applications %}
+                        <select data-attendance-status data-participation-id="{{ p.id }}" class="attendance-status-select">
+                            <option value="attended" {% if p.status == 'attended' %}selected{% endif %}>Был</option>
+                            <option value="absent_excused" {% if p.status == 'absent_excused' %}selected{% endif %}>Отсутствовал уважительно</option>
+                            <option value="absent_unexcused" {% if p.status == 'absent_unexcused' %}selected{% endif %}>Отсутствовал без предупреждения</option>
+                        </select>
+                        {% else %}
+                        {{ p.get_status_display }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Нет одобренных участников на эту смену.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Тим-лидеры</h3>
+    {% for staff in team_leads %}
+        <span class="pill info"><span class="dot"></span>{{ staff.user.full_name }}</span>
+    {% empty %}
+        <p>Тим-лидер не назначен.{% if is_manager %} Назначьте через «Редактировать».{% endif %}</p>
+    {% endfor %}
+</div>
+
+{% if is_participant %}
+<div class="card">
+    <h3>👥 Для участников мероприятия</h3>
+    <p>Волонтёров участвовало: {{ volunteers_count }}</p>
+    {% if event.chat_link %}<p>Ссылка на чат: <a href="{{ event.chat_link }}">{{ event.chat_link }}</a></p>{% endif %}
+    {% if event.dobro_ru_link %}<p>Добро.ру: <a href="{{ event.dobro_ru_link }}">{{ event.dobro_ru_link }}</a></p>{% endif %}
+
+    {% if my_feedback %}
+        <p style="color:var(--text-secondary); font-size:13px;">Вы уже оставили оценку этому мероприятию.</p>
+    {% elif feedback_form %}
+        <form method="post" action="{% url 'event_feedback_add' event.id %}" style="max-width:400px;">
+            {% csrf_token %}
+            {{ feedback_form.as_p }}
+            <button type="submit" class="btn secondary">Оставить оценку</button>
+        </form>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if is_participant %}
+<div class="card">
+    <h3>⭐ Отзывы о мероприятии</h3>
+    {% if avg_rating %}
+        <p style="color:var(--text-secondary); font-size:13px; margin-top:-8px;">Средняя оценка: {{ avg_rating|floatformat:1 }}/10 ({{ feedback_count }} отзывов)</p>
+    {% endif %}
+    {% for fb in feedbacks %}
+        <div style="border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:14px 16px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span style="display:inline-flex; align-items:center; gap:6px;">
+                    {% star_rating fb.rating %}
+                    <span class="mono" style="color:var(--text-secondary); font-size:12px;">{{ fb.rating }}/10</span>
+                </span>
+                <span class="mono" style="color:var(--text-tertiary); font-size:12px;">{{ fb.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            {% if fb.comment %}<p style="margin:8px 0 0; white-space:pre-wrap;">{{ fb.comment }}</p>{% endif %}
+        </div>
+    {% empty %}
+        <p style="color:var(--text-secondary);">Отзывов пока нет.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if can_manage_applications %}
+<div class="card" id="applications" style="padding:0; overflow:hidden;">
+    <div style="padding:20px 20px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <h3 style="padding:0; margin:0;">Набор: {{ approved_count }} из {{ needed }} (осталось {{ remaining }})</h3>
+        {% if pending_count and can_edit_applications %}
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span class="pill warning"><span class="dot"></span>Осталось обработать: {{ pending_count }}</span>
+            <form method="post" action="{% url 'event_application_process_all' event.id %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm">Принять всех</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    {% for entry in shifts_with_applications %}
+    <div style="padding:20px 20px 0;">
+        <h4 style="margin:0 0 4px;">Набор на смену «{{ entry.shift.day }}»: {{ entry.approved_count }} из {{ entry.needed }} (осталось {{ entry.remaining }})</h4>
+    </div>
+    <table class="responsive-table" data-sortable style="margin-bottom:8px;">
+        <thead><tr><th data-sort-key="name">ФИО</th><th data-sort-key="tg">Telegram</th><th data-sort-key="phone">Телефон</th><th data-sort-key="status">Статус</th><th data-sort-key="date">Подано</th><th></th></tr></thead>
+        <tbody>
+        {% for decision in entry.decisions %}
+            {% with application=decision.application %}
+            <tr {% if application.user_id %}data-href="{% url 'profile_detail' application.user_id %}"{% endif %}>
+                <td data-label="ФИО" data-sort-value="{{ application.first_name }} {{ application.last_name }}">{{ application.first_name }}{% if application.last_name %} {{ application.last_name }}{% endif %}</td>
+                <td data-label="Telegram" data-sort-value="{{ application.telegram_username }}">{{ application.telegram_username|default:"—" }}</td>
+                <td data-label="Телефон" class="mono" data-sort-value="{{ application.phone }}">{{ application.phone|default:"—" }}</td>
+                <td data-label="Статус" data-sort-value="{{ decision.status }}">
+                    {% if decision.status == 'approved' %}<span class="pill success"><span class="dot"></span>Одобрена</span>
+                    {% elif decision.status == 'rejected' %}<span class="pill neutral"><span class="dot"></span>Резерв/отклонена</span>
+                    {% else %}<span class="pill warning"><span class="dot"></span>Новая</span>{% endif %}
+                </td>
+                <td data-label="Подано" class="mono" data-sort-value="{{ application.submitted_at|default:application.created_at|date:'U' }}">{{ application.submitted_at|default:application.created_at }}</td>
+                <td data-label="">
+                    {% if can_edit_applications %}
+                    <form method="post" action="{% url 'application_shift_process' application.id entry.shift.id %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="approved">
+                        <button type="submit" class="btn" style="padding:6px 12px;">Принять</button>
+                    </form>
+                    <form method="post" action="{% url 'application_shift_process' application.id entry.shift.id %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="rejected">
+                        <button type="submit" class="btn danger" style="padding:6px 12px;">Отклонить</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endwith %}
+        {% empty %}
+            <tr><td colspan="6">Заявок на эту смену пока нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

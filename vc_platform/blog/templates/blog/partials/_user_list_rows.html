@@ -1,0 +1,19 @@
+<tbody data-rows data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}">
+{% for u in page_obj %}
+    <tr data-href="{% url 'profile_detail' u.id %}" data-search="{{ u.full_name }} {{ u.telegram_username }}">
+        <td data-label="Имя" data-sort-value="{{ u.full_name }}">{{ u.full_name }}</td>
+        <td data-label="Telegram" data-sort-value="{{ u.telegram_username }}">{{ u.telegram_username|default:"—" }}</td>
+        <td data-label="Роль" data-sort-value="{% if u.id in manager_ids %}2{% elif u.id in team_leader_ids %}1{% else %}0{% endif %}">
+            {% if u.id in manager_ids %}<span class="pill info"><span class="dot"></span>Менеджер</span>
+            {% elif u.id in team_leader_ids %}<span class="pill info"><span class="dot"></span>Тим-лидер</span>
+            {% else %}<span class="pill neutral"><span class="dot"></span>Волонтёр</span>{% endif %}
+        </td>
+        <td data-label="Статус" data-sort-value="{{ u.status }}">
+            {% if u.status == 'blacklisted' %}<span class="pill danger"><span class="dot"></span>В блэклисте</span>
+            {% elif u.status == 'inactive' %}<span class="pill warning"><span class="dot"></span>Неактивен</span>
+            {% else %}<span class="pill success"><span class="dot"></span>Активен</span>{% endif %}
+        </td>
+        <td data-label="Часов всего" class="num mono" data-sort-value="{{ u.total_hours }}">{{ u.total_hours }}</td>
+    </tr>
+{% endfor %}
+</tbody>

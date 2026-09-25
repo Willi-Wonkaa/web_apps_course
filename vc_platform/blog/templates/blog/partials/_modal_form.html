@@ -1,0 +1,8 @@
+<form method="post" enctype="{{ form_enctype|default:'application/x-www-form-urlencoded' }}" data-modal-form>
+    {% csrf_token %}
+    {% for hidden in extra_hidden %}{{ hidden }}{% endfor %}
+    {{ form.as_p }}
+    <div class="modal-footer-actions" style="display:flex; justify-content:flex-end; gap:10px; margin-top:1rem;">
+        <button type="submit" class="btn">{{ submit_label|default:'Сохранить' }}</button>
+    </div>
+</form>

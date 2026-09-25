@@ -1,0 +1,34 @@
+{% extends 'blog/base.html' %}
+{% block title %}Пользователи{% endblock %}
+{% block content %}
+<h1>Пользователи</h1>
+
+<div class="card">
+    <input type="search" id="users-search" placeholder="Поиск по имени, telegram…" style="margin:0;">
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="responsive-table" data-sortable data-infinite-scroll="{% url 'user_list' %}" id="users-table">
+        <thead>
+            <tr><th data-sort-key="name">Имя</th><th data-sort-key="tg">Telegram</th><th data-sort-key="role">Роль</th><th data-sort-key="status">Статус</th><th data-sort-key="hours" class="num">Часов всего</th></tr>
+        </thead>
+        {% include 'blog/partials/_user_list_rows.html' %}
+    </table>
+</div>
+
+<script>
+(function () {
+    var searchInput = document.getElementById('users-search');
+    var debounceTimer = null;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            var query = searchInput.value.trim().toLowerCase();
+            document.querySelectorAll('#users-table tbody tr[data-href]').forEach(function (row) {
+                row.hidden = !!query && row.getAttribute('data-search').toLowerCase().indexOf(query) === -1;
+            });
+        }, 1500);
+    });
+})();
+</script>
+{% endblock %}

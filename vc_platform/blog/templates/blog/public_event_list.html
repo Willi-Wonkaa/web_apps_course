@@ -1,0 +1,29 @@
+{% extends 'blog/base.html' %}
+{% block title %}Актуальные мероприятия{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Актуальные мероприятия</h1>
+</div>
+
+<p style="color:var(--text-secondary);">
+    Идущие и предстоящие мероприятия волонтёрского центра. Чтобы подать заявку, войдите в аккаунт.
+</p>
+
+{% for event in events %}
+<div class="card">
+    <h3 style="margin-top:0;">
+        <a href="{% url 'public_event_detail' event.public_token %}">{{ event.title }}</a>
+    </h3>
+    <p style="color:var(--text-secondary); font-size:0.9rem;">
+        {% if event.first_day %}
+            📆 {{ event.first_day }}{% if event.last_day and event.last_day != event.first_day %} — {{ event.last_day }}{% endif %}
+        {% endif %}
+        {% if event.location %} · 📍 {{ event.location.name }}{% endif %}
+    </p>
+    {% if event.description %}<p>{{ event.description|truncatewords:40 }}</p>{% endif %}
+    <a href="{% url 'public_event_detail' event.public_token %}" class="btn secondary">Подробнее</a>
+</div>
+{% empty %}
+<div class="card"><p style="margin:0;">Сейчас нет активных мероприятий.</p></div>
+{% endfor %}
+{% endblock %}

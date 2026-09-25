@@ -1,0 +1,49 @@
+<form method="post" data-modal-form class="event-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="field">
+        {{ form.day.label_tag }}
+        {{ form.day }}
+        {% if form.day.errors %}<div class="field-error">{{ form.day.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field-row" style="display:flex; gap:12px;">
+        <div class="field" style="flex:1;">
+            {{ form.start_time.label_tag }}
+            {{ form.start_time }}
+            {% if form.start_time.errors %}<div class="field-error">{{ form.start_time.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="field" style="flex:1;">
+            {{ form.end_time.label_tag }}
+            {{ form.end_time }}
+            {% if form.end_time.errors %}<div class="field-error">{{ form.end_time.errors|striptags }}</div>{% endif %}
+        </div>
+    </div>
+
+    <div class="field">
+        {{ form.location.label_tag }}
+        <div class="select-with-add">
+            {{ form.location }}
+            <button type="button" class="btn secondary add-ref-btn" data-add-ref="location" data-target="{{ form.location.id_for_label }}">＋</button>
+        </div>
+        {% if form.location.errors %}<div class="field-error">{{ form.location.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.volunteer_needed.label_tag }}
+        {{ form.volunteer_needed }}
+        {% if form.volunteer_needed.errors %}<div class="field-error">{{ form.volunteer_needed.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="field">
+        {{ form.recruit_status.label_tag }}
+        {{ form.recruit_status }}
+        {% if form.recruit_status.errors %}<div class="field-error">{{ form.recruit_status.errors|striptags }}</div>{% endif %}
+    </div>
+
+    <div class="event-form-actions">
+        <button type="submit" class="btn">{{ submit_label|default:'Добавить' }}</button>
+    </div>
+</form>

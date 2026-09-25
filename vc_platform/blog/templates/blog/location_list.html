@@ -1,0 +1,49 @@
+{% extends 'blog/base.html' %}
+{% block title %}Локации{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Локации</h1>
+    <a href="{% url 'location_create' %}" class="btn" data-modal data-modal-title="Новая локация">+ Новая локация</a>
+</div>
+
+<div class="card">
+    <input type="search" id="locations-search" placeholder="Поиск по названию, описанию…" style="margin:0;">
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="responsive-table" data-sortable id="locations-table">
+        <thead><tr><th data-sort-key="name">Название</th><th data-sort-key="description">Описание</th><th data-sort-key="map">Карта</th><th></th></tr></thead>
+        <tbody>
+        {% for location in locations %}
+            <tr data-search="{{ location.name }} {{ location.description }}">
+                <td data-label="Название" data-sort-value="{{ location.name }}">{{ location.name }}</td>
+                <td data-label="Описание" data-sort-value="{{ location.description }}">{{ location.description|default:"—"|truncatechars:120 }}</td>
+                <td data-label="Карта" data-sort-value="{{ location.map_link }}">
+                    {% if location.map_link %}<a href="{{ location.map_link }}" target="_blank" rel="noopener">Открыть карту →</a>{% else %}—{% endif %}
+                </td>
+                <td data-label="">
+                    <a href="{% url 'location_edit' location.id %}" class="btn secondary btn-sm" data-modal data-modal-title="Редактировать: {{ location.name }}">Изменить</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">Локаций пока нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+(function () {
+    var searchInput = document.getElementById('locations-search');
+    var debounceTimer = null;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            var query = searchInput.value.trim().toLowerCase();
+            document.querySelectorAll('#locations-table tbody tr[data-search]').forEach(function (row) {
+                row.hidden = !!query && row.getAttribute('data-search').toLowerCase().indexOf(query) === -1;
+            });
+        }, 1500);
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Волонтёрский центр</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#FAFAFB; color:#2B2B33; display:flex; align-items:center; justify-content:center; height:100vh; }
+        .msg { text-align:center; padding:20px; }
+    </style>
+</head>
+<body>
+<div class="msg" id="msg">Открываем Волонтёрский центр…</div>
+<script>
+(function () {
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if (!tg) {
+        document.getElementById('msg').textContent = 'Откройте это приложение через кнопку в Telegram-боте.';
+        return;
+    }
+    tg.ready();
+    tg.expand();
+
+    var initData = tg.initData || '';
+    if (!initData) {
+        document.getElementById('msg').textContent = 'Не удалось получить данные Telegram. Попробуйте закрыть и открыть приложение заново.';
+        return;
+    }
+
+    fetch('{% url "webapp_auth" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'init_data=' + encodeURIComponent(initData),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            document.getElementById('msg').textContent = data.error || 'Не удалось войти. Попробуйте ещё раз.';
+        }
+    })
+    .catch(function () {
+        document.getElementById('msg').textContent = 'Ошибка сети. Попробуйте ещё раз.';
+    });
+})();
+</script>
+</body>
+</html>

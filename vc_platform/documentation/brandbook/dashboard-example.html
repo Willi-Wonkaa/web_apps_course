@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Мероприятия</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --purple-500: #7C3AED; --purple-400: #9D6EF0; --purple-600:#6B21E0;
+    --radius-sm: 10px; --radius-lg: 14px; --radius-pill: 999px;
+  }
+  :root[data-theme="light"] {
+    --bg-page: #FAFAFB; --bg-card: #FFFFFF; --bg-card-hover:#F0F0F3; --bg-input:#F0F0F3;
+    --border-subtle: #E3E3E8; --text-primary:#2B2B33; --text-secondary:#83838f; --text-tertiary:#9A9AA5;
+    --accent: var(--purple-500); --accent-hover:var(--purple-600); --accent-text-on:#fff; --accent-soft:#F5F1FE;
+    --shadow-card: 0 1px 2px rgba(24,24,29,0.04), 0 4px 16px rgba(24,24,29,0.06);
+    --success:#16A34A; --success-soft:#EAFBF0; --warning:#D97706; --warning-soft:#FEF6E7;
+    --danger:#DC2626; --danger-soft:#FDECEC; --neutral:#6B7280; --neutral-soft:#F1F1F3;
+    --overlay: rgba(17,17,20,0.45);
+  }
+  :root[data-theme="dark"] {
+    --bg-page: #111114; --bg-card: #18181D; --bg-card-hover:#1F1F26; --bg-input:#1F1F26;
+    --border-subtle: rgba(255,255,255,0.07); --text-primary:#F5F5F7; --text-secondary:#9A9AA5; --text-tertiary:#6f6f7a;
+    --accent: var(--purple-400); --accent-hover:#B388F5; --accent-text-on:#18181D; --accent-soft:rgba(157,110,240,0.14);
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+    --success:#4ADE80; --success-soft:#132D1D; --warning:#FBBF24; --warning-soft:#332508;
+    --danger:#F87171; --danger-soft:#341414; --neutral:#9CA3AF; --neutral-soft:#232328;
+    --overlay: rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Inter',sans-serif; background:var(--bg-page); color:var(--text-primary); }
+  .mono { font-family:'JetBrains Mono', monospace; }
+
+  .topbar { position:sticky; top:0; z-index:60; display:flex; justify-content:space-between; align-items:center;
+    padding:14px 24px; background:var(--bg-page); border-bottom:1px solid var(--border-subtle); }
+  .topbar h1 { font-size:16px; margin:0; }
+  .topbar .tag { color: var(--accent); }
+  .view-switch, .theme-switch { display:flex; gap:4px; background:var(--bg-card); border:1px solid var(--border-subtle); padding:4px; border-radius:var(--radius-pill); }
+  .view-switch button, .theme-switch button {
+    border:none; background:transparent; color:var(--text-secondary); padding:6px 14px;
+    border-radius:var(--radius-pill); cursor:pointer; font-family:inherit; font-size:13px; font-weight:500;
+  }
+  .view-switch button.active, .theme-switch button.active { background:var(--accent); color:var(--accent-text-on); }
+  .controls { display:flex; gap:10px; }
+
+  /* ============ DESKTOP VIEW ============ */
+  #desktop-view { display:flex; }
+  .sidebar {
+    width:220px; flex-shrink:0; padding:20px 12px; border-right:1px solid var(--border-subtle);
+    min-height: calc(100vh - 53px);
+  }
+  .sidebar .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:var(--radius-sm);
+    color:var(--text-secondary); font-size:14px; font-weight:500; cursor:pointer; margin-bottom:2px;
+    border-left: 3px solid transparent;
+  }
+  .sidebar .nav-item.active { background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); }
+  .sidebar .nav-item:hover:not(.active) { background:var(--bg-card-hover); }
+
+  .main-content { flex:1; padding: 28px 32px; max-width:1100px; }
+  .page-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
+  .page-head h2 { font-size:26px; margin:0 0 4px; }
+  .page-head p { margin:0; color:var(--text-secondary); font-size:14px; }
+
+  .filters-bar { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .chip-filter {
+    padding:8px 16px; border-radius:var(--radius-pill); border:1px solid var(--border-subtle);
+    background:var(--bg-card); color:var(--text-secondary); font-size:13px; cursor:pointer; font-weight:500;
+  }
+  .chip-filter.active { background:var(--accent); color:var(--accent-text-on); border-color:transparent; }
+  .search-input {
+    flex:1; min-width:200px; padding:8px 14px; border-radius:var(--radius-pill);
+    border:1px solid var(--border-subtle); background:var(--bg-input); color:var(--text-primary); font-family:inherit; font-size:13px;
+  }
+
+  .event-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:18px; }
+  .event-card {
+    background:var(--bg-card); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-card);
+    cursor:pointer; transition: transform .15s ease;
+  }
+  .event-card:hover { transform: translateY(-2px); }
+  .event-cover {
+    height:120px; background: linear-gradient(135deg, var(--accent) 0%, #4527A0 100%);
+    display:flex; align-items:flex-end; padding:12px; position:relative;
+  }
+  .event-cover .cat-tag {
+    background: rgba(0,0,0,0.35); color:#fff; font-size:11px; font-weight:600;
+    padding:4px 10px; border-radius:var(--radius-pill); backdrop-filter: blur(4px);
+  }
+  .event-body { padding:14px 16px 16px; }
+  .event-title { font-size:15px; font-weight:600; margin:0 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .event-desc {
+    font-size:13px; color:var(--text-secondary); margin:0 0 12px; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .event-meta { display:flex; justify-content:space-between; align-items:center; }
+  .event-date { font-size:12px; color:var(--text-tertiary); }
+
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px 4px 8px; border-radius:var(--radius-pill); font-size:11px; font-weight:600; }
+  .pill .dot { width:6px; height:6px; border-radius:50%; }
+  .pill.success { background:var(--success-soft); color:var(--success); } .pill.success .dot{background:var(--success);}
+  .pill.warning { background:var(--warning-soft); color:var(--warning); } .pill.warning .dot{background:var(--warning);}
+  .pill.neutral { background:var(--neutral-soft); color:var(--neutral); } .pill.neutral .dot{background:var(--neutral);}
+
+  /* ============ MOBILE VIEW ============ */
+  #mobile-view { display:none; justify-content:center; padding: 24px 0; }
+  .phone-frame {
+    width:375px; max-width:100%; height:760px; background:var(--bg-page);
+    border-radius:36px; border:8px solid #26262c; overflow:hidden; position:relative; box-shadow:var(--shadow-card);
+  }
+  .phone-screen { height:100%; display:flex; flex-direction:column; }
+  .m-header { padding: 16px 16px 12px; border-bottom:1px solid var(--border-subtle); }
+  .m-header h2 { font-size:20px; margin:0 0 2px; }
+  .m-header p { margin:0; font-size:12px; color:var(--text-secondary); }
+
+  .m-filters { display:flex; gap:8px; padding: 12px 16px; overflow-x:auto; border-bottom:1px solid var(--border-subtle); }
+  .m-filters::-webkit-scrollbar { display:none; }
+  .m-chip { flex-shrink:0; padding:6px 14px; border-radius:var(--radius-pill); border:1px solid var(--border-subtle);
+    background:var(--bg-card); color:var(--text-secondary); font-size:12px; font-weight:500; white-space:nowrap; }
+  .m-chip.active { background:var(--accent); color:var(--accent-text-on); border-color:transparent; }
+
+  .m-list { flex:1; overflow-y:auto; padding: 12px 16px 90px; }
+  .m-event-card {
+    display:flex; gap:12px; background:var(--bg-card); border-radius:var(--radius-lg);
+    padding:10px; margin-bottom:10px; box-shadow:var(--shadow-card);
+  }
+  .m-event-cover {
+    width:80px; height:80px; border-radius:10px; flex-shrink:0;
+    background: linear-gradient(135deg, var(--accent), #4527A0);
+  }
+  .m-event-info { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .m-event-title { font-size:14px; font-weight:600; margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .m-event-desc {
+    font-size:12px; color:var(--text-secondary); margin:0 0 6px; line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .m-event-footer { margin-top:auto; display:flex; justify-content:space-between; align-items:center; }
+  .m-event-date { font-size:11px; color:var(--text-tertiary); }
+
+  .tabbar {
+    position:absolute; bottom:0; left:0; right:0; height:64px; background:var(--bg-card);
+    border-top:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-around;
+  }
+  .tab-item { display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-tertiary); font-size:10px; }
+  .tab-item.active { color:var(--accent); }
+  .tab-icon { font-size:18px; }
+  .fab-tab {
+    width:48px; height:48px; border-radius:50%; background:var(--accent); color:var(--accent-text-on);
+    display:flex; align-items:center; justify-content:center; font-size:22px; margin-top:-24px;
+    box-shadow: 0 4px 12px rgba(124,58,237,0.4);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Nexus <span class="tag">/ Мероприятия</span></h1>
+  <div class="controls">
+    <div class="view-switch">
+      <button class="active" onclick="setView('desktop')">🖥 Десктоп</button>
+      <button onclick="setView('mobile')">📱 Мобайл</button>
+    </div>
+    <div class="theme-switch">
+      <button onclick="setTheme('light')" id="btn-light">☀</button>
+      <button onclick="setTheme('dark')" id="btn-dark" class="active">●</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DESKTOP ===================== -->
+<div id="desktop-view">
+  <div class="sidebar">
+    <div class="nav-item">📊 Дашборд</div>
+    <div class="nav-item">📋 Мои заявки</div>
+    <div class="nav-item active">📅 Мероприятия</div>
+    <div class="nav-item">📈 Аналитика</div>
+    <div class="nav-item">👤 Профиль</div>
+  </div>
+  <div class="main-content">
+    <div class="page-head">
+      <div>
+        <h2>Актуальные мероприятия</h2>
+        <p>Отсортированы по ближайшей дате проведения · 6 мероприятий</p>
+      </div>
+      <button style="background:var(--accent); color:var(--accent-text-on); border:none; padding:10px 18px; border-radius:var(--radius-sm); font-weight:600; font-size:14px; cursor:pointer;">+ Создать мероприятие</button>
+    </div>
+
+    <div class="filters-bar">
+      <input class="search-input" placeholder="Поиск мероприятий...">
+      <button class="chip-filter active">Все</button>
+      <button class="chip-filter">Открыта запись</button>
+      <button class="chip-filter">Конференции</button>
+      <button class="chip-filter">Хакатоны</button>
+    </div>
+
+    <div class="event-grid" id="desktop-grid"></div>
+  </div>
+</div>
+
+<!-- ===================== MOBILE ===================== -->
+<div id="mobile-view">
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="m-header">
+        <h2>Мероприятия</h2>
+        <p>6 актуальных · ближайшие первыми</p>
+      </div>
+      <div class="m-filters">
+        <div class="m-chip active">Все</div>
+        <div class="m-chip">Открыта запись</div>
+        <div class="m-chip">Конференции</div>
+        <div class="m-chip">Хакатоны</div>
+        <div class="m-chip">Мастер-классы</div>
+      </div>
+      <div class="m-list" id="mobile-list"></div>
+      <div class="tabbar">
+        <div class="tab-item active"><span class="tab-icon">🏠</span>Дашборд</div>
+        <div class="tab-item"><span class="tab-icon">📋</span>Заявки</div>
+        <div class="fab-tab">+</div>
+        <div class="tab-item"><span class="tab-icon">📅</span>Меропр.</div>
+        <div class="tab-item"><span class="tab-icon">👤</span>Профиль</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const events = [
+  { title: "Хакатон Nexus 2026", desc: "Двухдневный хакатон для команд разработки: питчи, менторские сессии и призовой фонд 500 000 ₽.", date: "12 июля", cat: "Хакатон", status: "success", statusText: "Открыта запись" },
+  { title: "Конференция Product Days", desc: "Ежегодная встреча продуктовых команд: доклады про метрики, рост и AI в продукте.", date: "15 июля", cat: "Конференция", status: "success", statusText: "Открыта запись" },
+  { title: "Мастер-класс по аналитике данных", desc: "Практический воркшоп: строим дашборды и учимся находить инсайты в сырых данных.", date: "18 июля", cat: "Мастер-класс", status: "warning", statusText: "Мало мест" },
+  { title: "Демо-день инвесторам", desc: "Питчи команд-финалистов акселератора перед венчурными фондами и бизнес-ангелами.", date: "22 июля", cat: "Питч-сессия", status: "success", statusText: "Открыта запись" },
+  { title: "Митап frontend-разработчиков", desc: "Доклады про производительность интерфейсов, дизайн-системы и новые фреймворки.", date: "25 июля", cat: "Митап", status: "neutral", statusText: "Скоро" },
+  { title: "Осенний карьерный форум", desc: "Встречи с работодателями, разбор резюме и мок-собеседования для начинающих специалистов.", date: "2 августа", cat: "Форум", status: "neutral", statusText: "Скоро" },
+];
+
+function renderDesktop() {
+  const grid = document.getElementById('desktop-grid');
+  grid.innerHTML = events.map(e => `
+    <div class="event-card">
+      <div class="event-cover"><span class="cat-tag">${e.cat}</span></div>
+      <div class="event-body">
+        <p class="event-title">${e.title}</p>
+        <p class="event-desc">${e.desc}</p>
+        <div class="event-meta">
+          <span class="event-date mono">${e.date}</span>
+          <span class="pill ${e.status}"><span class="dot"></span>${e.statusText}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMobile() {
+  const list = document.getElementById('mobile-list');
+  list.innerHTML = events.map(e => `
+    <div class="m-event-card">
+      <div class="m-event-cover"></div>
+      <div class="m-event-info">
+        <p class="m-event-title">${e.title}</p>
+        <p class="m-event-desc">${e.desc}</p>
+        <div class="m-event-footer">
+          <span class="m-event-date mono">${e.date}</span>
+          <span class="pill ${e.status}"><span class="dot"></span>${e.statusText}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('btn-light').classList.toggle('active', t==='light');
+  document.getElementById('btn-dark').classList.toggle('active', t==='dark');
+}
+
+function setView(v) {
+  document.getElementById('desktop-view').style.display = v === 'desktop' ? 'flex' : 'none';
+  document.getElementById('mobile-view').style.display = v === 'mobile' ? 'flex' : 'none';
+  document.querySelectorAll('.view-switch button').forEach((b,i) => b.classList.toggle('active', (v==='desktop'&&i===0)||(v==='mobile'&&i===1)));
+}
+
+renderDesktop();
+renderMobile();
+</script>
+
+</body>
+</html>

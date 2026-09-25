@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Компоненты дизайн-системы</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --purple-50: #F5F1FE;
+    --purple-200: #D9C9FB;
+    --purple-400: #9D6EF0;
+    --purple-500: #7C3AED;
+    --purple-600: #6B21E0;
+    --purple-700: #5B1BC4;
+    --purple-900: #2E0F66;
+    --radius-sm: 10px;
+    --radius-lg: 14px;
+    --radius-pill: 999px;
+  }
+
+  :root[data-theme="light"] {
+    --bg-page: #FAFAFB;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F0F0F3;
+    --bg-input: #F0F0F3;
+    --border-subtle: #E3E3E8;
+    --text-primary: #2B2B33;
+    --text-secondary: #83838f;
+    --text-tertiary: #9A9AA5;
+    --accent: var(--purple-500);
+    --accent-hover: var(--purple-600);
+    --accent-text-on: #FFFFFF;
+    --accent-soft: var(--purple-50);
+    --shadow-card: 0 1px 2px rgba(24,24,29,0.04), 0 4px 16px rgba(24,24,29,0.06);
+    --success: #16A34A; --success-soft:#EAFBF0;
+    --warning: #D97706; --warning-soft:#FEF6E7;
+    --danger: #DC2626; --danger-soft:#FDECEC;
+    --info: #2563EB; --info-soft:#EAF1FE;
+    --neutral: #6B7280; --neutral-soft:#F1F1F3;
+    --overlay: rgba(17,17,20,0.45);
+  }
+
+  :root[data-theme="dark"] {
+    --bg-page: #111114;
+    --bg-card: #18181D;
+    --bg-card-hover: #1F1F26;
+    --bg-input: #1F1F26;
+    --border-subtle: rgba(255,255,255,0.07);
+    --text-primary: #F5F5F7;
+    --text-secondary: #9A9AA5;
+    --text-tertiary: #6f6f7a;
+    --accent: var(--purple-400);
+    --accent-hover: #B388F5;
+    --accent-text-on: #18181D;
+    --accent-soft: rgba(157,110,240,0.14);
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+    --success: #4ADE80; --success-soft: #132D1D;
+    --warning: #FBBF24; --warning-soft: #332508;
+    --danger: #F87171; --danger-soft: #341414;
+    --info: #60A5FA; --info-soft: #122238;
+    --neutral: #9CA3AF; --neutral-soft: #232328;
+    --overlay: rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    transition: background .2s ease, color .2s ease;
+    padding-bottom: 80px;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .topbar {
+    position: sticky; top:0; z-index: 50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 32px;
+    background: var(--bg-page);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .topbar h1 { font-size: 18px; margin:0; }
+  .topbar .tag { color: var(--accent); }
+
+  .theme-switch {
+    display:flex; align-items:center; gap:8px;
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    padding: 4px; border-radius: var(--radius-pill);
+  }
+  .theme-switch button {
+    border:none; background:transparent; color:var(--text-secondary);
+    padding: 6px 14px; border-radius: var(--radius-pill); cursor:pointer;
+    font-family:inherit; font-size:13px; font-weight:500;
+  }
+  .theme-switch button.active { background: var(--accent); color: var(--accent-text-on); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 32px; }
+  section { margin-bottom: 56px; }
+  section h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-secondary); font-weight: 600; margin-bottom: 20px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* ===== Color swatches ===== */
+  .swatch-row { display:flex; flex-wrap:wrap; gap:12px; }
+  .swatch { width: 120px; }
+  .swatch .chip { height: 64px; border-radius: var(--radius-sm); margin-bottom:6px; border:1px solid var(--border-subtle); }
+  .swatch .label { font-size:12px; color: var(--text-secondary); }
+  .swatch .hex { font-size: 11px; color: var(--text-tertiary); }
+
+  /* ===== Buttons ===== */
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  button.btn {
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer;
+    border: 1px solid transparent; display:inline-flex; align-items:center; gap:8px;
+    transition: background .15s ease, transform .05s ease;
+  }
+  button.btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-text-on); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; color: var(--text-primary); border-color: var(--border-subtle); }
+  .btn-secondary:hover { background: var(--bg-card-hover); }
+  .btn-ghost { background: transparent; color: var(--accent); }
+  .btn-ghost:hover { background: var(--accent-soft); }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  /* ===== Status Pill ===== */
+  .pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding: 4px 12px 4px 8px; border-radius: var(--radius-pill);
+    font-size: 12px; font-weight: 600;
+  }
+  .pill .dot { width:6px; height:6px; border-radius:50%; }
+  .pill.success { background: var(--success-soft); color: var(--success); }
+  .pill.success .dot { background: var(--success); }
+  .pill.warning { background: var(--warning-soft); color: var(--warning); }
+  .pill.warning .dot { background: var(--warning); }
+  .pill.danger { background: var(--danger-soft); color: var(--danger); }
+  .pill.danger .dot { background: var(--danger); }
+  .pill.info { background: var(--info-soft); color: var(--info); }
+  .pill.info .dot { background: var(--info); }
+  .pill.neutral { background: var(--neutral-soft); color: var(--neutral); }
+  .pill.neutral .dot { background: var(--neutral); }
+
+  /* ===== Card ===== */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); padding: 20px;
+  }
+
+  /* ===== KPI cards ===== */
+  .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+  .kpi .kpi-label { font-size:13px; color:var(--text-secondary); margin-bottom:8px; }
+  .kpi .kpi-value { font-size:30px; font-weight:700; }
+  .kpi .kpi-delta { font-size:12px; margin-top:6px; display:flex; align-items:center; gap:4px; }
+  .kpi .kpi-delta.up { color: var(--success); }
+  .kpi .kpi-delta.down { color: var(--danger); }
+
+  /* ===== Table ===== */
+  table { width:100%; border-collapse: collapse; }
+  thead th {
+    text-align:left; font-size: 12px; text-transform: uppercase; letter-spacing:.03em;
+    color: var(--text-secondary); font-weight:600; padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  tbody td { padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); font-size: 14px; }
+  tbody tr { cursor:pointer; transition: background .12s ease; }
+  tbody tr:hover { background: var(--bg-card-hover); }
+  tbody tr:last-child td { border-bottom:none; }
+  th.num, td.num { text-align:right; }
+
+  /* ===== Inputs ===== */
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .field label { font-size:13px; font-weight:500; color: var(--text-primary); }
+  .field .hint { font-size:12px; color: var(--text-tertiary); }
+  .field input, .field textarea, .field select {
+    font-family: inherit; font-size:14px; padding: 10px 12px;
+    background: var(--bg-input); border:1px solid var(--border-subtle);
+    border-radius: var(--radius-sm); color: var(--text-primary); resize: vertical;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent;
+  }
+  .char-counter { font-size:11px; color: var(--text-tertiary); text-align:right; }
+  .char-counter.warn { color: var(--warning); font-weight:600; }
+
+  /* ===== Date range picker (desktop) ===== */
+  .daterange { display:flex; gap:24px; }
+  .cal { width: 260px; }
+  .cal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-weight:600; font-size:14px; }
+  .cal-grid { display:grid; grid-template-columns: repeat(7,1fr); gap:4px; text-align:center; }
+  .cal-grid .dow { font-size:11px; color: var(--text-tertiary); padding:4px 0; }
+  .cal-grid .day { font-size:13px; padding:8px 0; border-radius: 6px; cursor:pointer; }
+  .cal-grid .day:hover { background: var(--bg-card-hover); }
+  .cal-grid .day.in-range { background: var(--accent-soft); border-radius:0; }
+  .cal-grid .day.range-start { background: var(--accent); color: var(--accent-text-on); border-radius: 6px 0 0 6px; }
+  .cal-grid .day.range-end { background: var(--accent); color: var(--accent-text-on); border-radius: 0 6px 6px 0; }
+  .presets { display:flex; flex-direction:column; gap:8px; min-width:140px; }
+  .presets button {
+    text-align:left; background:transparent; border:1px solid var(--border-subtle);
+    color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);
+    font-family:inherit; font-size:13px; cursor:pointer;
+  }
+  .presets button:hover { background: var(--bg-card-hover); }
+  .presets button.active { background: var(--accent-soft); color: var(--accent); border-color: transparent; font-weight:600; }
+
+  /* ===== Modal (desktop create) ===== */
+  .modal-demo-wrap { position:relative; height: 480px; border-radius: var(--radius-lg); overflow:hidden; background: var(--bg-page); border:1px solid var(--border-subtle); }
+  .modal-backdrop {
+    position:absolute; inset:0; background: var(--overlay);
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter: blur(3px);
+  }
+  .modal {
+    width: 420px; max-width: 90%; background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); overflow:hidden;
+  }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; padding: 18px 20px; border-bottom: 1px solid var(--border-subtle); }
+  .modal-header h3 { margin:0; font-size:16px; }
+  .modal-header .close { cursor:pointer; color:var(--text-secondary); background:none; border:none; font-size:18px; }
+  .modal-body { padding: 20px; }
+  .modal-footer { display:flex; justify-content:flex-end; gap:10px; padding: 16px 20px; border-top: 1px solid var(--border-subtle); }
+
+  /* ===== Bottom sheet (mobile create) ===== */
+  .phone-frame {
+    width: 375px; max-width:100%; margin: 0 auto; background: var(--bg-page);
+    border-radius: 32px; border: 8px solid var(--gray-900, #222); overflow:hidden;
+    position:relative; height: 700px; box-shadow: var(--shadow-card);
+  }
+  .phone-screen { position:relative; height:100%; overflow:hidden; }
+  .sheet {
+    position:absolute; left:0; right:0; bottom:0; height: 78%;
+    background: var(--bg-card); border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.25);
+    display:flex; flex-direction:column;
+  }
+  .sheet-grabber { width:36px; height:4px; background: var(--border-subtle); border-radius: 999px; margin: 10px auto 4px; }
+  .sheet-header { padding: 8px 20px 14px; border-bottom:1px solid var(--border-subtle); font-weight:600; font-size:16px; }
+  .sheet-body { padding: 16px 20px; overflow-y:auto; flex:1; }
+  .sheet-footer { padding: 14px 20px; border-top:1px solid var(--border-subtle); }
+  .sheet-footer .btn-primary { width:100%; justify-content:center; }
+  .sheet-scrim { position:absolute; inset:0; background: var(--overlay); }
+
+  code.inline { font-family:'JetBrains Mono'; font-size:12px; background: var(--bg-input); padding:2px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Nexus <span class="tag">/ Design System</span></h1>
+  <div class="theme-switch">
+    <button onclick="setTheme('light')" id="btn-light">☀ Светлая</button>
+    <button onclick="setTheme('dark')" id="btn-dark" class="active">● Тёмная</button>
+  </div>
+</div>
+
+<main>
+
+  <section>
+    <h2>01. Цветовая палитра</h2>
+    <p style="color:var(--text-secondary); font-size:14px; max-width:640px;">Основной акцент — насыщенный фиолетовый. Нейтральная шкала — true grey с лёгким холодным подтоном, без чистого чёрного/белого.</p>
+    <div class="swatch-row">
+      <div class="swatch"><div class="chip" style="background:var(--purple-500)"></div><div class="label">Accent 500</div><div class="hex mono">#7C3AED</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--purple-400)"></div><div class="label">Accent 400 (dark)</div><div class="hex mono">#9D6EF0</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--purple-600)"></div><div class="label">Accent hover</div><div class="hex mono">#6B21E0</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--success)"></div><div class="label">Success</div><div class="hex mono">semantic</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--warning)"></div><div class="label">Warning</div><div class="hex mono">semantic</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--danger)"></div><div class="label">Danger</div><div class="hex mono">semantic</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--info)"></div><div class="label">Info</div><div class="hex mono">semantic</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--bg-page); border:1px solid var(--border-subtle)"></div><div class="label">Page bg</div><div class="hex mono">true grey</div></div>
+      <div class="swatch"><div class="chip" style="background:var(--bg-card)"></div><div class="label">Card bg</div><div class="hex mono">elevated</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>02. Кнопки</h2>
+    <div class="row">
+      <button class="btn btn-primary">Создать заявку</button>
+      <button class="btn btn-secondary">Отмена</button>
+      <button class="btn btn-ghost">Подробнее</button>
+      <button class="btn btn-danger">Отклонить</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>03. Status Pill — сигнатурный элемент</h2>
+    <div class="row">
+      <span class="pill success"><span class="dot"></span>Одобрено</span>
+      <span class="pill warning"><span class="dot"></span>На рассмотрении</span>
+      <span class="pill danger"><span class="dot"></span>Отклонено</span>
+      <span class="pill info"><span class="dot"></span>Новая</span>
+      <span class="pill neutral"><span class="dot"></span>Черновик</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>04. KPI-карточки аналитики</h2>
+    <div class="kpi-grid">
+      <div class="card kpi">
+        <div class="kpi-label">Заявок за месяц</div>
+        <div class="kpi-value mono">1 284</div>
+        <div class="kpi-delta up">▲ 12.4% к прошлому месяцу</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-label">Одобрено</div>
+        <div class="kpi-value mono">942</div>
+        <div class="kpi-delta up">▲ 4.1%</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-label">Среднее время обработки</div>
+        <div class="kpi-value mono">3.2ч</div>
+        <div class="kpi-delta down">▼ 18% быстрее</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-label">Отклонено</div>
+        <div class="kpi-value mono">86</div>
+        <div class="kpi-delta down" style="color:var(--danger)">▲ 2.3%</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>05. Таблица (десктоп)</h2>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th>Заявка</th>
+            <th>Заявитель</th>
+            <th>Дата</th>
+            <th>Статус</th>
+            <th class="num">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="mono" style="color:var(--text-secondary)">#REQ-0142</span><br>Аренда оборудования</td>
+            <td>Иванова А.С.</td>
+            <td class="mono">06.07.2026</td>
+            <td><span class="pill success"><span class="dot"></span>Одобрено</span></td>
+            <td class="num mono">42 000 ₽</td>
+          </tr>
+          <tr>
+            <td><span class="mono" style="color:var(--text-secondary)">#REQ-0143</span><br>Командировка</td>
+            <td>Петров Д.М.</td>
+            <td class="mono">05.07.2026</td>
+            <td><span class="pill warning"><span class="dot"></span>На рассмотрении</span></td>
+            <td class="num mono">18 500 ₽</td>
+          </tr>
+          <tr>
+            <td><span class="mono" style="color:var(--text-secondary)">#REQ-0144</span><br>Закупка ПО</td>
+            <td>Сидорова Е.В.</td>
+            <td class="mono">04.07.2026</td>
+            <td><span class="pill danger"><span class="dot"></span>Отклонено</span></td>
+            <td class="num mono">96 200 ₽</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>06. Форма создания элемента (поля с лимитом символов)</h2>
+    <div class="card" style="max-width: 480px;">
+      <div class="field">
+        <label>Название мероприятия</label>
+        <input type="text" value="Хакатон Nexus 2026" maxlength="60">
+        <div class="char-counter">19 / 60</div>
+      </div>
+      <div class="field">
+        <label>Описание</label>
+        <textarea rows="3" maxlength="250">Двухдневный хакатон для команд разработки: питчи, менторские сессии и призовой фонд 500 000 ₽.</textarea>
+        <div class="char-counter">96 / 250</div>
+      </div>
+      <div class="field">
+        <label>Место проведения</label>
+        <input type="text" value="Технопарк «Сколково», Москва">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>07. Диапазон дат — десктоп</h2>
+    <div class="card">
+      <div class="daterange">
+        <div class="presets">
+          <button>Сегодня</button>
+          <button class="active">Эта неделя</button>
+          <button>Этот месяц</button>
+          <button>Последние 30 дней</button>
+        </div>
+        <div class="cal">
+          <div class="cal-head"><span>‹</span><span>Июль 2026</span><span>›</span></div>
+          <div class="cal-grid">
+            <div class="dow">Пн</div><div class="dow">Вт</div><div class="dow">Ср</div><div class="dow">Чт</div><div class="dow">Пт</div><div class="dow">Сб</div><div class="dow">Вс</div>
+            <div class="day">29</div><div class="day">30</div><div class="day">1</div><div class="day">2</div><div class="day">3</div><div class="day">4</div><div class="day">5</div>
+            <div class="day range-start">6</div><div class="day in-range">7</div><div class="day in-range">8</div><div class="day in-range">9</div><div class="day in-range">10</div><div class="day in-range">11</div><div class="day range-end">12</div>
+            <div class="day">13</div><div class="day">14</div><div class="day">15</div><div class="day">16</div><div class="day">17</div><div class="day">18</div><div class="day">19</div>
+          </div>
+        </div>
+        <div class="cal">
+          <div class="cal-head"><span></span><span>Август 2026</span><span></span></div>
+          <div class="cal-grid">
+            <div class="dow">Пн</div><div class="dow">Вт</div><div class="dow">Ср</div><div class="dow">Чт</div><div class="dow">Пт</div><div class="dow">Сб</div><div class="dow">Вс</div>
+            <div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div><div class="day">1</div><div class="day">2</div>
+            <div class="day">3</div><div class="day">4</div><div class="day">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div><div class="day">9</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>08. Модальное окно создания (десктоп)</h2>
+    <div class="modal-demo-wrap">
+      <div style="padding:20px; color:var(--text-secondary); font-size:13px;">Фон страницы (затемняется под модалкой)</div>
+      <div class="modal-backdrop">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Новое мероприятие</h3>
+            <button class="close">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label>Название</label>
+              <input type="text" placeholder="Например, Демо-день продукта">
+            </div>
+            <div class="field">
+              <label>Описание</label>
+              <textarea rows="3" placeholder="До 250 символов"></textarea>
+              <div class="char-counter">0 / 250</div>
+            </div>
+            <div class="field">
+              <label>Дата проведения</label>
+              <input type="text" placeholder="06.07.2026 — 08.07.2026">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary">Отмена</button>
+            <button class="btn btn-primary">Создать мероприятие</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>09. Bottom Sheet создания элемента (мобайл)</h2>
+    <p style="color:var(--text-secondary); font-size:13px; max-width:480px;">На мобильных устройствах формы создания открываются снизу, а не по центру экрана. Кнопка действия зафиксирована внизу (sticky footer).</p>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div style="padding:16px; color:var(--text-secondary); font-size:12px;">Экран списка мероприятий (под шторкой)</div>
+        <div class="sheet-scrim"></div>
+        <div class="sheet">
+          <div class="sheet-grabber"></div>
+          <div class="sheet-header">Новое мероприятие</div>
+          <div class="sheet-body">
+            <div class="field">
+              <label>Название</label>
+              <input type="text" placeholder="Название мероприятия">
+              <div class="char-counter">0 / 60</div>
+            </div>
+            <div class="field">
+              <label>Описание</label>
+              <textarea rows="4" placeholder="Кратко опишите мероприятие"></textarea>
+              <div class="char-counter">0 / 250</div>
+            </div>
+            <div class="field">
+              <label>Дата</label>
+              <input type="text" placeholder="Выбрать даты">
+            </div>
+            <div class="field">
+              <label>Место проведения</label>
+              <input type="text" placeholder="Адрес или ссылка">
+            </div>
+          </div>
+          <div class="sheet-footer">
+            <button class="btn btn-primary">Создать мероприятие</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>10. Типографика</h2>
+    <div class="card">
+      <div style="font-size:28px; font-weight:700; margin-bottom:8px;">Заголовок страницы — Display 28/34</div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:8px;">Заголовок секции — H2 18/24</div>
+      <div style="font-size:15px; margin-bottom:8px;">Основной текст интерфейса — Body 15/22. Используется для описаний мероприятий и заявок.</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Вторичный текст — Body Small 13/18</div>
+      <div class="mono" style="font-size:13px; color:var(--text-secondary);">#REQ-2026-0042 · 06.07.2026 · 42 000 ₽ — моноширинный для данных</div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('btn-light').classList.toggle('active', t === 'light');
+    document.getElementById('btn-dark').classList.toggle('active', t === 'dark');
+  }
+</script>
+
+</body>
+</html>

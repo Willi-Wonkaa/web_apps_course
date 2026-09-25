@@ -1,0 +1,145 @@
+{% extends 'blog/base.html' %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+<h1>{{ target.full_name }}</h1>
+<span class="pill neutral"><span class="dot"></span>{{ target.telegram_username|default:"без ника" }}</span>
+
+<div class="stat-grid">
+    <div class="stat-tile"><div class="value">{{ target.total_hours }}</div><div class="label">Часов всего</div></div>
+    <div class="stat-tile"><div class="value">{{ target.season_hours }}</div><div class="label">Часов за сезон</div></div>
+    <div class="stat-tile"><div class="value">{{ target.total_event_count }}</div><div class="label">Мероприятий всего</div></div>
+    <div class="stat-tile"><div class="value">{{ target.season_event_count }}</div><div class="label">Мероприятий за сезон</div></div>
+</div>
+
+{% if tl_role or mgr_role %}
+<div class="card">
+    <h3>Роль в центре</h3>
+    {% if mgr_role %}
+        <p><span class="pill info"><span class="dot"></span>Менеджер</span> с {{ mgr_role.assigned_at|date:"d.m.Y" }}</p>
+    {% endif %}
+    {% if tl_role %}
+        <p><span class="pill info"><span class="dot"></span>Тим-лидер</span> с {{ tl_role.assigned_at|date:"d.m.Y" }} ·
+           мероприятий как тим-лидер: {{ tl_event_count }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <h3 style="padding:20px 20px 0;">Прошедшие мероприятия</h3>
+    <table class="responsive-table">
+        <thead><tr><th>Мероприятие</th><th>Дата</th><th class="num">Часы</th></tr></thead>
+        <tbody>
+        {% for p in past_participations %}
+            <tr data-href="{% url 'event_detail' p.event_day.event.id %}">
+                <td data-label="Мероприятие">{{ p.event_day.event.title }}</td>
+                <td data-label="Дата" class="mono">{{ p.event_day.day }}</td>
+                <td data-label="Часы" class="num mono">{{ p.hours }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3">Пока нет прошедших мероприятий.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'blog/partials/_experience_block.html' with can_edit=is_owner %}
+
+{% if has_extended_access %}
+<div class="card">
+    <h3>👤 ФИО и контакты</h3>
+    <p>ФИО: {{ target.first_name }} {{ target.last_name }}</p>
+    <p>Телефон: {{ target.phone|default:"—" }}</p>
+    <p>Email: {{ target.email|default:"—" }}</p>
+    <p>VK: {{ target.VK_username|default:"—" }}</p>
+    <p>Дата рождения: {{ target.birthday|default:"—" }}</p>
+    <p>Пол: {{ target.get_gender_display|default:"—" }}</p>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <h3 style="padding:20px 20px 0;">История заявок</h3>
+    <table class="responsive-table">
+        <thead><tr><th>Мероприятие</th><th>Подана</th><th>Статус</th>{% if is_owner %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+        {% for a in applications %}
+            <tr {% if not is_owner %}data-href="{% url 'event_detail' a.event.id %}"{% endif %}>
+                <td data-label="Мероприятие"><a href="{% url 'event_detail' a.event.id %}">{{ a.event.title }}</a></td>
+                <td data-label="Подана" class="mono">{{ a.submitted_at|default:a.created_at }}</td>
+                <td data-label="Статус">
+                    {% if a.status == 'approved' %}<span class="pill success"><span class="dot"></span>{{ a.get_status_display }}</span>
+                    {% elif a.status == 'rejected' %}<span class="pill neutral"><span class="dot"></span>{{ a.get_status_display }}</span>
+                    {% elif a.status == 'cancelled' %}<span class="pill danger"><span class="dot"></span>{{ a.get_status_display }}</span>
+                    {% else %}<span class="pill warning"><span class="dot"></span>{{ a.get_status_display }}</span>{% endif %}
+                </td>
+                {% if is_owner %}
+                <td data-label="">
+                    {% if a.status == 'new' or a.status == 'approved' %}
+                    <a href="{% url 'application_edit' a.id %}" class="btn secondary btn-sm" data-modal data-modal-title="Редактировать заявку">Изменить</a>
+                    <a href="{% url 'application_cancel' a.id %}" class="btn danger btn-sm" data-modal data-modal-title="Отменить заявку">Отменить</a>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">Заявок нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h3>Благодарственные письма</h3>
+    {% for e in letters_pool %}
+        <p>«{{ e.title }}» — <a href="{% url 'letter_view' target.id e.id %}">открыть письмо</a></p>
+    {% empty %}
+        <p>Писем пока нет: они появляются после явки на мероприятие, у которого задан шаблон письма.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if is_manager %}
+<div class="card">
+    <h3>🔒 Внутреннее: статус и чарн</h3>
+    <p>Статус:
+        {% if target.status == 'blacklisted' %}<span class="pill danger"><span class="dot"></span>{{ target.get_status_display }}</span>
+        {% elif target.status == 'inactive' %}<span class="pill warning"><span class="dot"></span>{{ target.get_status_display }}</span>
+        {% else %}<span class="pill success"><span class="dot"></span>{{ target.get_status_display }}</span>{% endif %}
+    </p>
+    <p>Churn score: <span class="mono">{{ target.churn_score|floatformat:2 }}</span></p>
+    <p>Комментарий менеджера: {{ target.comment|default:"—" }}</p>
+
+    <h4>История чарна по сезонам</h4>
+    <table class="responsive-table">
+        <thead><tr><th>Сезон</th><th>Значение</th><th>Дата</th></tr></thead>
+        <tbody>
+        {% for ch in churn_history %}
+            <tr>
+                <td data-label="Сезон">{{ ch.season }}</td>
+                <td data-label="Значение" class="mono">{{ ch.churn_score }}</td>
+                <td data-label="Дата" class="mono">{{ ch.created_at }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3">Истории нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if can_see_comments %}
+<div class="card">
+    <h3>🔒 Комментарии к волонтёру</h3>
+    <p style="opacity:0.7; font-size:0.85rem;">Сам волонтёр эти комментарии не видит.</p>
+    {% for c in comments %}
+        <p>{{ c.created_at }} — {{ c.author.full_name }}{% if c.event %} ({{ c.event.title }}){% endif %}: {{ c.text }}</p>
+    {% empty %}
+        <p>Комментариев нет.</p>
+    {% endfor %}
+
+    <form method="post" action="{% url 'profile_comment_add' target.id %}" style="margin-top:1rem; max-width:500px;">
+        {% csrf_token %}
+        {{ comment_form.as_p }}
+        <button type="submit" class="btn secondary">Добавить комментарий</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

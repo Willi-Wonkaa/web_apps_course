@@ -1,0 +1,8 @@
+{% extends 'blog/base.html' %}
+{% block title %}Новая смена: {{ event.title }}{% endblock %}
+{% block content %}
+<h1>Новая смена: {{ event.title }}</h1>
+<div class="card" style="max-width:500px;">
+    {% include 'blog/partials/_event_shift_form_body.html' %}
+</div>
+{% endblock %}

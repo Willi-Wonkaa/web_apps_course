@@ -1,0 +1,54 @@
+{% extends 'blog/base.html' %}
+{% load custom_tags %}
+{% block title %}{{ organizer.first_name }} {{ organizer.last_name }}{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+    <h1 style="margin:0;">{{ organizer.first_name }} {{ organizer.last_name }}</h1>
+    <a href="{% url 'organizer_edit' organizer.id %}" class="btn secondary" data-modal data-modal-title="Редактировать: {{ organizer.first_name }} {{ organizer.last_name }}">Редактировать</a>
+</div>
+
+<div class="card">
+    <h3>Контакты</h3>
+    <p>Телефон: {{ organizer.phone|default:"—" }}</p>
+    <p>Email: {{ organizer.email|default:"—" }}</p>
+    <p>Telegram: {{ organizer.telegram_username|default:"—" }}</p>
+    <p>VK: {{ organizer.VK_username|default:"—" }}</p>
+    <p>WhatsApp: {{ organizer.whatsapp|default:"—" }}</p>
+    <p>Комментарии: {{ organizer.comments|default:"—" }}</p>
+</div>
+
+<div class="card">
+    <h3>Организации</h3>
+    {% for org in organizations %}
+        <p><a href="{% url 'organization_detail' org.id %}">{{ org.name }}</a></p>
+    {% empty %}
+        <p>Не привязан ни к одной организации.</p>
+    {% endfor %}
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <h3 style="padding:20px 20px 0;">Мероприятия (контактное лицо)</h3>
+    <table class="responsive-table">
+        <thead><tr><th>Название</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for event in events %}
+            <tr data-href="{% url 'event_detail' event.id %}">
+                <td data-label="Название">{{ event.title }}</td>
+                <td data-label="Статус">{% event_status_pill event %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="2">Мероприятий нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h3>История взаимодействия</h3>
+    {% for log in interactions %}
+        <p>{{ log.created_at }} — {{ log.get_contact_type_display }} ({{ log.author.full_name }}): {{ log.note|default:"без заметки" }}</p>
+    {% empty %}
+        <p>Записей о взаимодействии пока нет.</p>
+    {% endfor %}
+</div>
+{% endblock %}

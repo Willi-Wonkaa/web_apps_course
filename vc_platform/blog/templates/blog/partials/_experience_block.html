@@ -1,0 +1,59 @@
+{# Блок «Мой опыт» — системный (участия) + внешний (ExternalExperience) опыт.
+   Ожидает: experience (dict из build_experience), is_owner (bool), can_edit (bool).
+   На публичной странице is_owner/can_edit = False. #}
+<div class="card" id="experience" style="padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:20px 20px 0; flex-wrap:wrap;">
+        <h3 style="margin:0;">🎖️ Волонтёрский опыт</h3>
+        {% if can_edit %}
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            {% if experience_share_url %}
+            <button type="button" class="btn secondary"
+                    data-copy-text="Участвовал(а) в {{ experience.total_count }} мероприятиях. Подробно ознакомиться со всеми мероприятиями можно тут: {{ experience_share_url }}">
+                🔗 Скопировать опыт
+            </button>
+            {% endif %}
+            <a href="{% url 'external_experience_add' %}" class="btn"
+               data-modal data-modal-title="Добавить внешнее мероприятие">＋ Внешнее мероприятие</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <table class="responsive-table">
+        <thead><tr><th>Мероприятие</th><th>Дата</th><th>Тип</th>{% if can_edit %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+        {% for item in experience.items %}
+            <tr>
+                <td data-label="Мероприятие">
+                    {% if item.event_id %}
+                        <a href="{% url 'event_detail' item.event_id %}">{{ item.title }}</a>
+                    {% else %}
+                        {{ item.title }}
+                    {% endif %}
+                </td>
+                <td data-label="Дата" class="mono">{{ item.date|default:"—" }}</td>
+                <td data-label="Тип">
+                    {% if item.kind == 'external' %}
+                        <span class="pill neutral"><span class="dot"></span>Внешнее</span>
+                    {% else %}
+                        <span class="pill success"><span class="dot"></span>Центр</span>
+                    {% endif %}
+                </td>
+                {% if can_edit %}
+                <td data-label="">
+                    {% if item.kind == 'external' %}
+                    <a href="{% url 'external_experience_edit' item.exp_id %}" class="btn secondary" data-modal data-modal-title="Редактировать">✎</a>
+                    <form method="post" action="{% url 'external_experience_delete' item.exp_id %}" class="inline"
+                          onsubmit="return confirm('Удалить эту запись?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn danger">✕</button>
+                    </form>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+        {% empty %}
+            <tr><td colspan="{% if can_edit %}4{% else %}3{% endif %}">Опыта пока нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,25 @@
+{% extends 'blog/base.html' %}
+{% block title %}Заполнение профиля{% endblock %}
+{% block content %}
+<div class="card" style="max-width:420px; margin: 3rem auto;">
+    <h2>Заполните профиль</h2>
+    <p style="color:var(--text-secondary); font-size:0.9rem;">
+        Чтобы подавать заявки на мероприятия, укажите имя. Остальные поля — по желанию.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+        <div class="field">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.errors %}<div class="field-error">{{ field.errors|striptags }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="event-form-actions">
+            <button type="submit" class="btn">Сохранить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

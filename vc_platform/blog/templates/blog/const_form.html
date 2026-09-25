@@ -1,0 +1,8 @@
+{% extends 'blog/base.html' %}
+{% block title %}Изменить: {{ const.name }}{% endblock %}
+{% block content %}
+<h1>Изменить константу «{{ const.name }}»</h1>
+<div class="card" style="max-width:480px;">
+    {% include 'blog/partials/_const_form_body.html' %}
+</div>
+{% endblock %}

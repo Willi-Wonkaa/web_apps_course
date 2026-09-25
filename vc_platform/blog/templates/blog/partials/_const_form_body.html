@@ -1,0 +1,22 @@
+<form method="post" data-modal-form>
+    {% csrf_token %}
+    <p style="color:var(--text-secondary); font-size:0.85rem;">{{ const.description|default:"" }}</p>
+
+    {{ form.value.errors }}
+    <div class="field">
+        {{ form.value.label_tag }}
+        {{ form.value }}
+    </div>
+
+    {% if show_captcha %}
+    <div class="field">
+        <label>{{ captcha_question }} =</label>
+        <input type="number" name="captcha_answer" required autofocus>
+        <div class="field-hint">Значение меняется — подтвердите действие решением примера.</div>
+    </div>
+    {% endif %}
+
+    <div class="event-form-actions">
+        <button type="submit" class="btn">{% if show_captcha %}Подтвердить и сохранить{% else %}Сохранить{% endif %}</button>
+    </div>
+</form>
