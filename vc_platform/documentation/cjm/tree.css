@@ -1,0 +1,179 @@
+/* Общие стили интерактивных CJM-деревьев (см. tree.js).
+   Самодостаточно, без внешних ресурсов — работает по двойному клику из файла. */
+
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-2: #1e222b;
+  --ink: #e8ecf3;
+  --ink-dim: #9aa4b2;
+  --line: #2a2f3a;
+  --accent: #5b8cff;
+
+  --root: #6c5ce7;
+  --stage: #2d3340;
+  --ok: #2f9e6b;      /* 🙂 */
+  --fak: #c9503f;     /* 😖 */
+  --wow: #d4a017;     /* 🤩 */
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --panel-2: #eef1f7;
+    --ink: #1a1e27;
+    --ink-dim: #5a6472;
+    --line: #d5dbe6;
+    --accent: #2f6bff;
+    --stage: #e4e9f2;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.cjm-app { display: flex; flex-direction: column; height: 100vh; }
+
+.cjm-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.cjm-topbar h1 { font-size: 16px; margin: 0; font-weight: 650; }
+.cjm-topbar .sub { color: var(--ink-dim); font-size: 12.5px; }
+
+.cjm-nav { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.cjm-nav a {
+  text-decoration: none; color: var(--ink-dim);
+  font-size: 12.5px; padding: 5px 10px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--panel-2);
+}
+.cjm-nav a:hover { color: var(--ink); border-color: var(--accent); }
+.cjm-nav a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+.cjm-legend {
+  display: flex; gap: 14px; align-items: center;
+  font-size: 12px; color: var(--ink-dim); flex-wrap: wrap;
+}
+.cjm-legend b { color: var(--ink); font-weight: 600; }
+.cjm-legend .chip { display: inline-flex; align-items: center; gap: 5px; }
+
+.cjm-stage-wrap { position: relative; flex: 1; overflow: hidden; }
+#stage { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+#stage.grabbing { cursor: grabbing; }
+
+/* Кнопки управления зумом */
+.cjm-controls {
+  position: absolute; right: 14px; bottom: 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.cjm-controls button {
+  width: 38px; height: 38px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--panel);
+  color: var(--ink); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cjm-controls button:hover { border-color: var(--accent); }
+.cjm-controls button.wide { width: auto; padding: 0 10px; font-size: 12px; height: 32px; }
+
+.cjm-hint {
+  position: absolute; left: 14px; bottom: 14px;
+  font-size: 11.5px; color: var(--ink-dim);
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 8px; max-width: 260px;
+}
+
+/* SVG-узлы */
+.node-card { cursor: default; }
+.node-rect { rx: 10; stroke: var(--line); stroke-width: 1.2; }
+.node-root .node-rect { fill: var(--root); stroke: var(--root); }
+.node-stage .node-rect { fill: var(--stage); }
+.node-leaf .node-rect { fill: var(--panel); }
+
+.node-title { font-size: 13px; font-weight: 640; fill: var(--ink); }
+.node-root .node-title { fill: #fff; }
+.node-code { font-size: 10.5px; font-weight: 700; fill: var(--ink-dim); letter-spacing: .3px; }
+.node-root .node-code { fill: #ffffff; opacity: .85; }
+.node-desc { font-size: 11px; fill: var(--ink-dim); }
+.node-root .node-desc { fill: #ffffff; opacity: .92; }
+/* Эмодзи-бейдж — эмодзи цветные сами по себе, но зададим белый fill на случай
+   моно-рендера, чтобы не сливался с цветным фоном бейджа. */
+.edge-badge-emoji { fill: #fff; }
+
+.edge { fill: none; stroke: var(--line); stroke-width: 2; }
+.edge-emotion-ok { stroke: var(--ok); }
+.edge-emotion-fak { stroke: var(--fak); }
+.edge-emotion-wow { stroke: var(--wow); }
+
+.edge-badge-bg { rx: 9; }
+.edge-emotion-ok  .edge-badge-bg { fill: var(--ok); }
+.edge-emotion-fak .edge-badge-bg { fill: var(--fak); }
+.edge-emotion-wow .edge-badge-bg { fill: var(--wow); }
+.edge-badge-emoji { font-size: 12px; }
+/* Подпись на цветном бейдже — всегда белая (бейдж окрашен в цвет эмоции),
+   в обеих темах. Важно: CSS-правило перекрывает presentation-атрибут fill из JS. */
+.edge-label { font-size: 10.5px; font-weight: 600; fill: #fff; }
+
+/* Кликабельное ребро (открывает панель с разбором эмоции) */
+.edge-hit { stroke: transparent; stroke-width: 18; fill: none; cursor: pointer; }
+.edge-badge-hit { cursor: pointer; }
+.edge-badge-bg { transition: filter .12s; }
+.edge-badge-hit:hover .edge-badge-bg { filter: brightness(1.15); }
+.edge-group.selected .edge { stroke-width: 3.5; }
+.edge-group.selected .edge-badge-bg { stroke: var(--ink); stroke-width: 2; }
+
+/* Панель разбора эмоции */
+.cjm-panel {
+  position: absolute; top: 0; right: 0; height: 100%; width: 360px; max-width: 88vw;
+  background: var(--panel); border-left: 1px solid var(--line);
+  transform: translateX(100%); transition: transform .2s ease;
+  display: flex; flex-direction: column; z-index: 5;
+  box-shadow: -8px 0 30px rgba(0,0,0,.25);
+}
+.cjm-panel.open { transform: translateX(0); }
+.cjm-panel-head {
+  padding: 16px 18px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.cjm-panel-emoji { font-size: 30px; line-height: 1; }
+.cjm-panel-head .titles { flex: 1; }
+.cjm-panel-head .step { font-size: 15px; font-weight: 650; margin: 0 0 3px; }
+.cjm-panel-head .flow { font-size: 12px; color: var(--ink-dim); }
+.cjm-panel-close {
+  background: none; border: none; color: var(--ink-dim); font-size: 22px;
+  cursor: pointer; line-height: 1; padding: 0 2px;
+}
+.cjm-panel-close:hover { color: var(--ink); }
+.cjm-panel-body { padding: 16px 18px; overflow-y: auto; }
+.cjm-panel .emo-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 650; padding: 4px 10px; border-radius: 20px;
+  color: #fff; margin-bottom: 16px;
+}
+.emo-tag.ok  { background: var(--ok); }
+.emo-tag.fak { background: var(--fak); }
+.emo-tag.wow { background: var(--wow); }
+.cjm-panel .sect { margin: 0 0 16px; }
+.cjm-panel .sect h4 {
+  margin: 0 0 5px; font-size: 11.5px; letter-spacing: .4px; text-transform: uppercase;
+  color: var(--ink-dim); display: flex; align-items: center; gap: 6px;
+}
+.cjm-panel .sect p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--ink); }
+.cjm-panel .sect.wow-box {
+  background: color-mix(in srgb, var(--wow) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wow) 45%, transparent);
+  border-radius: 10px; padding: 12px 13px;
+}
+.cjm-panel .sect.wow-box h4 { color: var(--wow); }
+.cjm-panel-empty { color: var(--ink-dim); font-size: 13px; padding: 20px 18px; line-height: 1.5; }

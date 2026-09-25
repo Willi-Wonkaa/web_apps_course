@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CJM-деревья · Волонтёрский центр</title>
+  <link rel="stylesheet" href="tree.css">
+  <style>
+    html, body { overflow: auto; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 60px; }
+    .lead { color: var(--ink-dim); font-size: 15px; line-height: 1.6; margin: 0 0 26px; }
+    h1.page { font-size: 26px; margin: 0 0 6px; }
+    .legend-row { display: flex; gap: 22px; flex-wrap: wrap; margin: 22px 0 30px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .legend-row .item { font-size: 14px; }
+    .legend-row .emo { font-size: 18px; margin-right: 6px; }
+    .legend-row b { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-dim); font-weight: 500; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    a.card { display: block; text-decoration: none; color: inherit;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px;
+      transition: border-color .15s, transform .15s; }
+    a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    a.card .tag { font-size: 11px; letter-spacing: .5px; color: var(--ink-dim); text-transform: uppercase; }
+    a.card h3 { margin: 6px 0 8px; font-size: 18px; }
+    a.card p { margin: 0; font-size: 13.5px; color: var(--ink-dim); line-height: 1.5; }
+    .roots { margin: 30px 0 10px; }
+    .roots h2 { font-size: 16px; margin: 0 0 10px; }
+    .roots ol { margin: 0; padding-left: 20px; color: var(--ink-dim); font-size: 14px; line-height: 1.7; }
+    .roots ol b { color: var(--ink); }
+    .foot { margin-top: 34px; font-size: 13px; color: var(--ink-dim); }
+    .foot a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="page">CJM-деревья платформы Волонтёрского центра</h1>
+    <p class="lead">
+      Интерактивные карты пути пользователя (Customer Journey Maps) в виде n-арных деревьев.
+      Каждый переход помечен оценочной эмоцией пользователя на этом шаге. Открывается по
+      двойному клику из файла — интернет не нужен. Внутри дерева: тяни мышью — панорама,
+      колесо или кнопки — зум, «Вписать» — вернуть общий вид. Точки зафиксированы.
+    </p>
+
+    <div class="legend-row">
+      <div class="item"><span class="emo">🙂</span>ok-эмоция<b>ожидаемо, всё работает</b></div>
+      <div class="item"><span class="emo">😖</span>fak-эмоция<b>неудобно / долго / непонятно</b></div>
+      <div class="item"><span class="emo">🤩</span>wow-эмоция<b>система дала сверх ожиданий</b></div>
+    </div>
+
+    <div class="grid">
+      <a class="card" href="volunteer.html">
+        <span class="tag">3 корня · первое касание</span>
+        <h3>Волонтёр</h3>
+        <p>Три точки входа: через бота, через подачу заявки на сайте, через появление заявки из Excel. Регистрация, заявки, статистика, оценки.</p>
+      </a>
+      <a class="card" href="team-leader.html">
+        <span class="tag">контекстная роль</span>
+        <h3>Тим-лидер</h3>
+        <p>Только свои мероприятия и пока меро не завершено: обработка заявок (в т.ч. по сменам), явка, часы, комментарии, доступ к профилям.</p>
+      </a>
+      <a class="card" href="manager.html">
+        <span class="tag">полный доступ</span>
+        <h3>Менеджер</h3>
+        <p>Мероприятия (создание → публикация → рассылка → завершение), заявки и Excel-импорт, справочники, роли, отчёты.</p>
+      </a>
+      <a class="card" href="event.html">
+        <span class="tag">сквозная сущность</span>
+        <h3>Мероприятие</h3>
+        <p>Жизненный цикл от запроса извне до пост-обработки. В каждой стадии действуют разные роли (🔗).</p>
+      </a>
+    </div>
+
+    <div class="roots">
+      <h2>Три точки первого касания (корни дерева волонтёра)</h2>
+      <ol>
+        <li><b>Через бота</b> — <code>/start</code> в Telegram, создаётся гость.</li>
+        <li><b>Через подачу заявки на сайте</b> — вход через Telegram, затем заявка (веб-регистрации «с нуля» нет).</li>
+        <li><b>Через появление заявки из Excel</b> — менеджер импортирует выгрузку; профиль создаётся автоматически, человек «встречает» систему позже.</li>
+      </ol>
+    </div>
+
+    <p class="foot">
+      Текстовый источник данных деревьев — <a href="../user-scenarios.md">user-scenarios.md</a>.
+      См. также <a href="../cjm-event-lifecycle.md">cjm-event-lifecycle.md</a>,
+      <a href="../user-journeys-web.md">user-journeys-web.md</a>,
+      <a href="../user-journeys-bot.md">user-journeys-bot.md</a>.
+    </p>
+  </div>
+</body>
+</html>
